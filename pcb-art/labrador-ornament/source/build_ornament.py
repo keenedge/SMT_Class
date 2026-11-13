@@ -254,7 +254,7 @@ yjk, yjk_text, ystrap = place(jk_raw, **Y), place(jk_text_raw, **Y), place(strap
 ydog, ydark, ytag = place(dog, **Y), place(dog_dark, **Y), place(tag, **Y)
 
 # ---- tree + star + hanging eyelet
-TX = float(os.environ.get("TX", 62.2))
+TX = float(os.environ.get("TX", 62.45))
 STAR_C = (TX, 13.6)
 tiers = [(21.0, 35.5, 12.0), (27.5, 49.0, 17.5), (37.5, 63.0, 22.5), (49.5, 77.0, 27.0)]
 tier_polys = []
@@ -307,24 +307,31 @@ wdark = unary_union([
 # ---- wrapped present, bottom right: the CR2032 holder sits behind it on the back as the counterweight
 PX0, PX1, PY0 = 68.5, 97.0, 71.0      # 24.5 x 24.5 mm at final size, room for an SMD CR2032 holder
 BAT_C = ((PX0 + PX1) / 2, 86.0)
-BX, KY = 84.4, PY0 - 4.6          # bow knot
+BT = PY0 + 0.8                      # top rim of the box
+LID_ANG, LID_P = 15.0, (PX1 + 1.5, BT)   # lid is askew: hinged on the right corner, pushed up on the left by the puppy
+def LROT(g):
+    return affinity.rotate(g, LID_ANG, origin=LID_P)
+BX, KY = 84.8, BT - 4.0 - 1.4       # bow knot (on the lid, before the lid is tilted)
 def _loop(sg, k=0.8):
     return smooth_poly([(BX + sg * k * x, KY + k * y) for x, y in [(0.6, 0.2), (3.2, -4.4), (7.6, -5.0), (9.4, -2.2), (8.4, 1.0), (4.0, 1.2)]])
-bow_loops = unary_union([_loop(1), _loop(-1)])
-bow_knot = box(BX - 1.5, KY - 1.6, BX + 1.5, KY + 1.8).buffer(0.6, join_style=1)
+lid = LROT(box(PX0 - 1.5, BT - 4.0, PX1 + 1.5, BT))
+bow_loops = LROT(unary_union([_loop(1), _loop(-1)]))
+bow_knot = LROT(box(BX - 1.5, KY - 1.6, BX + 1.5, KY + 1.8).buffer(0.6, join_style=1))
 bow = unary_union([bow_loops, bow_knot])
-# puppy tail poking out from under the lid, mid-wag
-_tp = catmull([(94.6, PY0 - 2.0), (93.8, PY0 - 6.5), (94.2, PY0 - 11.0), (95.8, PY0 - 14.6), (96.6, PY0 - 16.6)], closed=False, n=8)
+_lip = LROT(Point(PX0 - 1.5, BT)).coords[0]           # raised left corner of the lid
+gap = Polygon([LID_P, _lip, (PX0, BT)])               # dark opening between the box and the lifted lid
+# puppy tail poking out behind the lid, mid-wag
+_tp = catmull([(94.6, BT - 2.0), (93.8, BT - 7.0), (94.2, BT - 11.6), (95.8, BT - 15.2), (96.6, BT - 17.2)], closed=False, n=8)
 ptail = unary_union([Point(p).buffer(2.1 - 0.9 * i / (len(_tp) - 1)) for i, p in enumerate(_tp)])
-# puppy peeking over the lid on the left: top of the head, floppy ears, two paws hooked over the edge
-HX, LID_T = 72.4, PY0 - 3.2
-HY = LID_T - 2.4
+# puppy peeking out from under the lifted lid: face in the opening, floppy ears, two paws hooked over the rim
+HX, LID_T = 74.4, BT
+HY = BT - 2.9
 phead = unary_union([circle(HX, HY, 5.0),
                      smooth_poly([(HX - 3.0, HY - 4.2), (HX - 5.8, HY - 3.4), (HX - 6.6, HY + 0.6), (HX - 5.4, HY + 2.6), (HX - 3.8, HY + 0.4)]),
                      smooth_poly([(HX + 3.0, HY - 4.2), (HX + 5.8, HY - 3.4), (HX + 6.6, HY + 0.6), (HX + 5.4, HY + 2.6), (HX + 3.8, HY + 0.4)])])
-phead = phead.intersection(box(0, 0, 100, LID_T + 0.6))
-ppaws = unary_union([box(HX - 4.9, LID_T - 0.7, HX - 3.1, LID_T + 1.0).buffer(0.45, join_style=1), box(HX + 3.1, LID_T - 0.7, HX + 4.9, LID_T + 1.0).buffer(0.45, join_style=1)])
-present = unary_union([box(PX0, PY0, PX1, 99.6), box(PX0 - 1.5, PY0 - 3.2, PX1 + 1.5, PY0 + 0.8), bow, ptail, phead])
+phead = phead.intersection(box(0, 0, 100, BT + 0.6))
+ppaws = unary_union([box(HX - 4.9, BT - 0.9, HX - 3.1, BT + 1.2).buffer(0.45, join_style=1), box(HX + 3.1, BT - 0.9, HX + 4.9, BT + 1.2).buffer(0.45, join_style=1)])
+present = unary_union([box(PX0, BT, PX1, 99.6), gap, lid, bow, ptail, phead])
 
 raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present])
 # make it routable: inside corners get >= 1 mm radius, and slivers thinner than 1.6 mm are removed
@@ -454,39 +461,38 @@ wsilk = wdog.intersection(safe_silk).difference(wdark)
 wbell = circle(*wl([(8.6, 10.6)])[0], 0.6)
 # present: gold ribbon + bow, white outline
 pbox = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(safe_cu)
-# bow: gold loops with dark centres so they read as loops, a knot, and two ribbon ends draped over the box
-_holes = unary_union([affinity.scale(_loop(sg), 0.42, 0.42, origin=(BX + sg * 4.35, KY - 1.5)) for sg in (1, -1)])
-_ends = unary_union([Polygon([(BX - 1.2, KY + 1.4), (BX + 0.6, KY + 1.4), (BX - 4.4, PY0 + 9.4), (BX - 5.6, PY0 + 7.6), (BX - 7.4, PY0 + 8.6)]),
-                     Polygon([(BX + 1.2, KY + 1.4), (BX - 0.6, KY + 1.4), (BX + 4.4, PY0 + 9.4), (BX + 5.6, PY0 + 7.6), (BX + 7.4, PY0 + 8.6)])])
+# bow: gold loops with dark centres so they read as loops, a knot, and two short ribbon ends, all riding on the tilted lid
+_holes = LROT(unary_union([affinity.scale(_loop(sg), 0.42, 0.42, origin=(BX + sg * 4.35, KY - 1.5)) for sg in (1, -1)]))
+_ends = LROT(unary_union([Polygon([(BX - 1.2, KY + 1.4), (BX + 0.6, KY + 1.4), (BX - 3.4, KY + 8.6), (BX - 4.5, KY + 7.0), (BX - 6.2, KY + 7.8)]),
+                          Polygon([(BX + 1.2, KY + 1.4), (BX - 0.6, KY + 1.4), (BX + 3.4, KY + 8.6), (BX + 4.5, KY + 7.0), (BX + 6.2, KY + 7.8)])]))
 _knotline = bow_knot.buffer(0.35).difference(bow_knot.buffer(-0.05))
 bow_gold = unary_union([bow_loops.difference(_holes), _ends]).difference(_knotline).union(bow_knot.buffer(-0.05))
-lid_band = box(PX0 - 1.5, PY0 - 2.4, PX1 + 1.5, PY0)
-vband = box(BX - 1.5, PY0 + 0.8, BX + 1.5, 99.6)
-ribbon = unary_union([vband.difference(_ends.buffer(0.35)), lid_band.difference(bow.buffer(0.35)).difference(_ends.buffer(0.35)).difference(ppaws.buffer(0.45)), bow_gold,
+lid_band = LROT(box(PX0 - 1.5, BT - 3.3, PX1 + 1.5, BT - 0.7))
+vband = box(BX - 1.5, BT, BX + 1.5, 99.6)
+ribbon = unary_union([vband.difference(_ends.buffer(0.35)).difference(lid.buffer(0.35)), lid_band.difference(bow.buffer(0.35)).difference(_ends.buffer(0.35)), bow_gold,
                       ]).intersection(safe_cu)
-pin = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(board).buffer(-0.8)
-psilk = pin.difference(pin.buffer(-0.35)).difference(ribbon.buffer(0.3))
-_pt = ptail.intersection(board).buffer(-0.55).difference(box(0, PY0 - 3.2 - 0.2, 100, 100))
+pin = box(PX0, BT, PX1, 99.6).intersection(board).buffer(-0.8)
+psilk = pin.difference(pin.buffer(-0.35)).difference(ribbon.buffer(0.3)).difference(ppaws.buffer(0.35)).difference(lid.buffer(0.3)).difference(_ends.buffer(0.3))
 _ticks = unary_union([stroke([(_tp[i][0] - 0.9, _tp[i][1] + 0.5), (_tp[i][0] + 0.5, _tp[i][1] - 0.5)], 0.3, smooth=False) for i in range(6, len(_tp) - 5, 5)])
 
 # yellow Lab puppy: gold head, ears and paws with dark engraved features
 _pdark = unary_union([
-    circle(HX - 1.8, HY - 0.6, 0.62), circle(HX + 1.8, HY - 0.6, 0.62),                                # eyes
-    stroke([(HX - 2.7, HY - 1.9), (HX - 1.3, HY - 2.2)], 0.28, smooth=False), stroke([(HX + 2.7, HY - 1.9), (HX + 1.3, HY - 2.2)], 0.28, smooth=False),
-    smooth_poly([(HX - 1.2, HY + 0.9), (HX + 1.2, HY + 0.9), (HX + 0.8, HY + 1.9), (HX, HY + 2.2), (HX - 0.8, HY + 1.9)]),   # nose
-    stroke([(HX - 3.3, HY - 3.8), (HX - 4.2, HY - 1.4), (HX - 3.9, HY + 1.2)], 0.38),                     # ear edges
-    stroke([(HX + 3.3, HY - 3.8), (HX + 4.2, HY - 1.4), (HX + 3.9, HY + 1.2)], 0.38),
+    circle(HX - 1.8, HY - 0.3, 0.66), circle(HX + 1.8, HY - 0.3, 0.66),                                # eyes
+    smooth_poly([(HX - 1.2, HY + 1.1), (HX + 1.2, HY + 1.1), (HX + 0.8, HY + 2.1), (HX, HY + 2.4), (HX - 0.8, HY + 2.1)]),   # nose
+    stroke([(HX - 3.5, HY - 3.0), (HX - 4.2, HY - 1.0), (HX - 3.9, HY + 1.4)], 0.38),                     # ear edges
+    stroke([(HX + 3.5, HY - 3.0), (HX + 4.2, HY - 1.0), (HX + 3.9, HY + 1.4)], 0.38),
 ])
-_toes = unary_union([stroke([(HX + sx + dx, LID_T + 0.1), (HX + sx + dx, LID_T + 1.5)], 0.25, smooth=False) for sx in (-4.0, 4.0) for dx in (-0.4, 0.4)])
-puppy_gold = unary_union([phead.difference(box(0, LID_T - 0.3, 100, 100)).difference(ppaws.buffer(0.4)).difference(_pdark),
+_toes = unary_union([stroke([(HX + sx + dx, BT + 0.2), (HX + sx + dx, BT + 1.7)], 0.25, smooth=False) for sx in (-4.0, 4.0) for dx in (-0.4, 0.4)])
+_front = unary_union([lid.buffer(0.45), bow.buffer(0.45), _ends.buffer(0.45)])     # things in front of the puppy
+puppy_gold = unary_union([phead.difference(box(0, BT - 0.3, 100, 100)).difference(ppaws.buffer(0.4)).difference(_pdark).difference(_front),
                           ppaws.difference(_toes),
-                          ptail.difference(box(0, LID_T - 0.3, 100, 100)).difference(_ticks.buffer(0.05))])
-peye_gold = unary_union([circle(HX - 1.6, HY - 0.8, 0.2), circle(HX + 2.0, HY - 0.8, 0.2)])
+                          ptail.difference(_front).difference(gap.buffer(0.3)).difference(box(0, BT - 0.3, 100, 100)).difference(_ticks.buffer(0.05))])
+peye_gold = unary_union([circle(HX - 1.6, HY - 0.5, 0.2), circle(HX + 2.0, HY - 0.5, 0.2)]).difference(_front)
 
 bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
 
 # ================================================================ assemble
-gold_open = unary_union([ygold, bgold.difference(gapw), star_gold, eyelet, bauble_gold, ribbon, wbell, puppy_gold.intersection(safe_cu).difference(bow.buffer(0.55)), peye_gold]).intersection(safe_cu).difference(led_keep)
+gold_open = unary_union([ygold, bgold.difference(gapw), star_gold, eyelet, bauble_gold, ribbon, wbell, puppy_gold.intersection(safe_cu), peye_gold]).intersection(safe_cu).difference(led_keep)
 gold_open = gold_open.buffer(-0.07).buffer(0.07)
 copper = gold_open.buffer(0.15).intersection(board.buffer(-0.4)).difference(led_keep.buffer(-0.1))
 # the yellow dog is one solid copper shape (details are mask over copper)

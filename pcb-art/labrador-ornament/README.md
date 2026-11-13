@@ -1,8 +1,8 @@
 # "No More Silent Nights" dogs-and-tree ornament: KiCad layer SVGs
 
-The board itself is cut to the silhouette of the scene: a black Labrador and a yellow Labrador look up at a Christmas tree with a star on top. A small white dog with an antler tied to its head sits in front of them, and a wrapped present with a big bow sits bottom right, with a puppy peeking over the lid and its tail poking out the other side. A ground strip ties everything into one board.
+The board itself is cut to the silhouette of the scene: a black Labrador and a yellow Labrador look up at a Christmas tree with a star on top. A small white dog with an antler tied to its head sits in front of them, and a wrapped present with a big bow sits bottom right, with its lid pushed askew by a puppy peeking out from under it, and the puppy's tail poking out the other side. A ground strip ties everything into one board.
 
-The board fits inside an **85 x 85 mm** square (83.3 mm wide, 85.0 mm tall). Every SVG uses the origin at the top-left corner of that square, drawn at 1 SVG unit = 1 mm. Text has already been turned into outlines, and shapes with holes are split into hole-free pieces.
+The board fits inside an **85 x 85 mm** square (84.0 mm wide, 85.0 mm tall). Every SVG uses the origin at the top-left corner of that square, drawn at 1 SVG unit = 1 mm. Text has already been turned into outlines, and shapes with holes are split into hole-free pieces.
 
 ## How the colours are made
 **Black solder mask + ENIG finish + white silkscreen.**
@@ -14,15 +14,15 @@ The board fits inside an **85 x 85 mm** square (83.3 mm wide, 85.0 mm tall). Eve
 - **Tree:** black mask with white edge lines. The dogs and the present sit in front of it. The star, the hanging eyelet and the present's ribbon are gold.
 
 ## Balance
-The 3 mm hanging hole is above the star at X = 52.97 mm. The CR2032 holder goes on the back behind the present, centred at X = 70.62, Y = 73.32, and acts as the counterweight.
+The 3 mm hanging hole is above the star at X = 52.84 mm. The CR2032 holder goes on the back behind the present, centred at X = 70.26, Y = 73.32, and acts as the counterweight.
 
 | Item | Mass used | Centre X |
 |---|---|---|
-| Bare board (1.6 mm FR4, 33 cm²) | 9.9 g | 45.0 mm |
-| CR2032 cell + SMD holder | 4.5 g (3.0 g + 1.5 g) | 70.6 mm |
-| **Combined** | 14.4 g | **53.04 mm** |
+| Bare board (1.6 mm FR4, 33 cm²) | 10.0 g | 45.0 mm |
+| CR2032 cell + SMD holder | 4.5 g (3.0 g + 1.5 g) | 70.3 mm |
+| **Combined** | 14.5 g | **52.84 mm** |
 
-With those numbers the centre of mass is 0.06 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
+With those numbers the centre of mass is 0.01 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
 
 These are estimates. Weigh your actual holder: every 1 g of difference in the battery assembly moves the balance point about 1.25 mm (about 1.2°). To trim, slide the holder: moving it 1 mm sideways moves the balance point about 0.3 mm. The ICs and passives weigh under 1 g in total. Placing them near X = 53 on the back keeps them out of the balance.
 
