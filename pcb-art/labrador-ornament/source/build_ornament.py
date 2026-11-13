@@ -529,6 +529,29 @@ BAT_C, HOLE_C = finp(BAT_C), finp(HOLE_C)
 cx, cy = finp((cx, cy))
 led_outline = unary_union([_lbox(x, y, r, 1.0, 0.625).exterior.buffer(0.05) for (x, y), r in zip(LEDS, LED_ROT)])
 bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
+
+# ---- front-side parts zone inside the gift box (SMT on F.Cu) + through-hole holder pads (holder on B.Cu, soldered on the front)
+_bx0, _bx1 = finp((PX0, 0))[0], finp((PX1, 0))[0]
+_by0, _by1 = finp((0, BT))[1], finp((0, 99.6))[1]
+_rbx = finp((BX, 0))[0]
+print("BOX final x", round(_bx0, 2), round(_bx1, 2), "y", round(_by0, 2), round(_by1, 2), "ribbon x", round(_rbx, 2))
+def _rect(cx_, cy_, w_, h_): return box(cx_ - w_ / 2, cy_ - h_ / 2, cx_ + w_ / 2, cy_ + h_ / 2)
+PARTS = []   # (ref, kind, cx, cy, w, h)
+_lx = _bx0 + 1.6                      # left column start
+PARTS.append(("U2 CD4017 SOIC-16", "ic", _lx + 3.2, _by0 + 8.0, 6.4, 10.4))
+PARTS.append(("U1 TLC555 SOIC-8", "ic", _lx + 3.2, _by0 + 17.6, 6.4, 5.4))
+_cxl = _lx + 8.4                      # resistor column left of the ribbon
+_ri = 0
+for k in range(11):                   # 0603 passives, 3.1 x 1.0 mm footprint extent, 1.7 mm pitch
+    PARTS.append((f"R/C/D {_ri+1}", "passive", _cxl, _by0 + 2.6 + 1.75 * k, 3.1, 1.0)); _ri += 1
+_rx = (_rbx + 1.3 + _bx1 - 1.6) / 2   # area right of the ribbon
+for k in range(7):
+    for j in range(2):
+        PARTS.append((f"R/C/D {_ri+1}", "passive", _rx - 0.0, _by0 + 6.4 + 1.75 * k, 3.1, 1.0)) if j == 0 else None
+        if j == 0: _ri += 1
+HOLDER_PADS = [("BT1 +", _rx, _by0 + 3.0), ("BT1 -", _rx, _by1 - 3.2)]
+parts_outline = unary_union([_rect(*p[2:]).exterior.buffer(0.05) for p in PARTS])
+pad_guide = unary_union([ring(x, y, 1.1, 0.1).union(Point(x, y).buffer(0.5, 16).difference(Point(x, y).buffer(0.4, 16))) for _, x, y in HOLDER_PADS])
 _bare_fx = finp((board.centroid.x, board.centroid.y))[0]
 print(f"FINALX bare={_bare_fx:.2f} battery={BAT_C[0]:.2f} combined={cx:.2f} hole={HOLE_C[0]:.2f} board_g={M_BOARD:.1f} tot_g={M_BOARD+M_BAT:.1f} bat_xy=({BAT_C[0]:.2f},{BAT_C[1]:.2f})")
 print("FINAL bounds", [round(v, 2) for v in outline.bounds], "hole", [round(v, 2) for v in HOLE_C], "com", round(cx, 2), round(cy, 2))
@@ -562,11 +585,13 @@ write("02_F.Cu.svg", "F.Cu: copper under the gold art (ENIG). Filled shapes = co
 write("03_F.Mask.svg", "F.Mask: filled shapes = solder mask OPENINGS = exposed ENIG gold", fill_paths(gold_open))
 write("04_F.Silkscreen.svg", "F.Silkscreen: black dog line work, tree edges, snow line and caption (white legend, clear of the 10 LEDs)", fill_paths(sil_all))
 write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 outlines, F.Cu) and the CR2032 cell position (20 mm circle, holder goes on B.Cu)",
-      fill_paths(bat_guide.union(led_outline).union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
+      fill_paths(bat_guide.union(led_outline).union(parts_outline).union(pad_guide).union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
 with open(os.path.join(OUT, "_leds.txt"), "w") as f:
     f.write("# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 85 x 85 mm box)\n")
     for i, (x, y) in enumerate(LEDS):
         f.write(f"D{i+1}, {x:.2f}, {y:.2f}, {LED_ROT[i]}   # {LED_NAME[i]}\n")
+    for p in PARTS: f.write(f"# front SMT zone: {p[0]}, centre {p[2]:.2f}, {p[3]:.2f}, extent {p[4]:.1f} x {p[5]:.1f} mm\n")
+    for n_, x_, y_ in HOLDER_PADS: f.write(f"{n_} through-hole pad (2.2 mm pad, 1.0 mm hole), {x_:.2f}, {y_:.2f}\n")
     f.write(f"BT1 (CR2032 holder centre, B.Cu), {BAT_C[0]:.2f}, {BAT_C[1]:.2f}, 0\n")
     f.write(f"# hanging hole {HOLE_C[0]:.2f}, {HOLE_C[1]:.2f}; centre of mass with battery {cx:.2f}, {cy:.2f}\n")
 

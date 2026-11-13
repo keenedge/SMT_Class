@@ -24,7 +24,7 @@ The 3 mm hanging hole is above the star at X = 52.79 mm. The CR2032 holder goes 
 
 With those numbers the centre of mass is 0.05 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
 
-These are estimates. Weigh your actual holder: every 1 g of difference in the battery assembly moves the balance point about 1.25 mm (about 1.2°). To trim, slide the holder: moving it 1 mm sideways moves the balance point about 0.3 mm. The ICs and passives weigh under 1 g in total. Placing them near X = 53 on the back keeps them out of the balance.
+These are estimates. Weigh your actual holder: every 1 g of difference in the battery assembly moves the balance point about 1.25 mm (about 1.2°). To trim, slide the holder: moving it 1 mm sideways moves the balance point about 0.3 mm. The ICs and passives weigh under 1 g in total. They now sit on the front in the box, close to the battery, so they shift the balance by well under 0.1 mm.
 
 ## Outline notes
 - Inside corners have a radius of at least 1 mm, and nothing is narrower than 1.6 mm. The narrowest part is the stalk under the star (4.5 mm).
@@ -69,7 +69,10 @@ The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz. There are 10 LEDs: 
 - Tree and star LEDs have a 4.4 x 2.0 mm clear area; the puppy eyes have a tighter 3.5 x 2.0 mm area, so their vias should sit close to the pads or in them.
 - The puppy's eyes are only 3.4 mm apart, so D9 and D10 stand upright side by side. 0805 parts fit but cover most of the face; 0603 would look better.
 - **Running from a CR2032 (3 V) needs changes to the schematic.** A standard NE555 needs at least 4.5 V, so swap it for a CMOS 555 such as TLC555 or LMC555. Blue and white LEDs will be dim at 3 V, so use red, amber or yellow-green, or lower the resistors. The USB-C connector and its 5k1 resistors are no longer needed.
-- Use a surface-mount holder on B.Cu, so no pins come through the present. The present is 24.5 x 24.5 mm, so pick a compact holder.
+- **Parts layout.** All SMT parts, the two ICs, about 18 resistors, capacitors and diodes, go on the front inside the gift box, together with the LEDs. The only through-hole part is the CR2032 holder: it is mounted on the back, centred at X = 70.15, Y = 72.64, and its two pins are soldered from the front.
+  - The guide layer shows the reserved zones: U2 CD4017 (SOIC-16) and U1 TLC555 (SOIC-8) in the left of the box, a column of 11 passive footprints beside them, 7 more passives right of the ribbon, and two holder pads (2.2 mm pad, 1.0 mm hole) at X = 76.97, Y = 64.14 (+) and Y = 81.71 (-). `_leds.txt` has the centres.
+  - **The pad spacing is a placeholder.** Pick the actual through-hole CR2032 holder first, then move the two pads to its pin positions. The cell stays centred behind the box for the balance.
+  - The parts sit on black mask, so the box shows only the gold ribbon and its white outline. Keep the gold ribbon 0.25 mm or more away from part pads.
 
 ## Import (KiCad 8: PCB Editor > File > Import > Graphics…)
 Use these settings for every file: Placement = At X 0, Y 0; Import scale = 1.0; tick "Group items".
@@ -80,7 +83,7 @@ Use these settings for every file: Placement = At X 0, Y 0; Import scale = 1.0; 
 | 02_F.Cu.svg | F.Cu | Copper under every gold area. It is unconnected, so keep pours and tracks off the front around it. |
 | 03_F.Mask.svg | F.Mask | Filled shapes are mask **openings**, which become the exposed ENIG gold. |
 | 04_F.Silkscreen.svg | F.Silkscreen | White dog, black dog line work, tree edges, present outline, ground line and "No More Silent Nights". |
-| 05_User.Drawings_LED_guide.svg | User.Drawings | The 10 LED positions and the 20 mm coin cell circle. |
+| 05_User.Drawings_LED_guide.svg | User.Drawings | The 10 LED positions, the 20 mm cell circle (back side), the front parts zones in the gift box and the 2 holder pads. |
 
 There is no F.Paste art layer, because paste on the art would put solder on the gold.
 
@@ -104,7 +107,7 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 
 **Things to know before ordering:**
 - **Delicate tips.** The tree's branch tips and the star's points are narrower than 2 mm at the very end, as thin as 1.6 mm. They cut fine but can chip in handling. The unsupported star stalk is 4.5 mm wide.
-- **Assembly service.** The LEDs are on the front and the 555, 4017, resistors and coin cell holder are on the back, so you need JLCPCB's **Standard PCBA** (double-sided). Standard PCBA lists edge rails and fiducials as necessary. Their pages don't say how they handle odd-shaped outlines, so ask JLCPCB support or use their "Panel by JLCPCB" option and look at their panel preview before paying. They recommend 5 mm process edges.
+- **Assembly service.** The LEDs, 555, 4017, resistors and diodes are all on the front, so assembly is **single-sided SMT** (front only), plus a hand-soldered through-hole holder. That avoids the double-sided Standard PCBA requirement; confirm the through-hole step with JLCPCB or solder it yourself. Standard PCBA lists edge rails and fiducials as necessary. Their pages don't say how they handle odd-shaped outlines, so ask JLCPCB support or use their "Panel by JLCPCB" option and look at their panel preview before paying. They recommend 5 mm process edges.
 - **Component to board edge.** JLCPCB publishes no minimum for components other than copper to edge (0.2 mm). The nearest LED pad is D4 at 0.78 mm from the edge (D2 0.80, D6 0.89), and the coin cell area keeps at least 1.9 mm clear for a 20.5 mm circle. Check the footprint of your chosen holder: the present area fits a circle about 24 mm across, so larger holders will not fit.
 - **Finish.** Mask over bare copper is not an issue on this board. Exposed ENIG areas are all 1:1 mask openings.
 - **Edge.Cuts import.** When you import the outline into KiCad, check that it joins into one closed shape.
