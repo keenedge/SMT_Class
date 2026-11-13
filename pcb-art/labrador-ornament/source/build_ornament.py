@@ -112,8 +112,8 @@ class FlatPen(BasePen):
         self.cur = []
     _endPath = _closePath
 
-def text_geom(s, x, y_base, cap_h, center=True, track=0.0):
-    f = TTFont(FONT)
+def text_geom(s, x, y_base, cap_h, center=True, track=0.0, font=None):
+    f = TTFont(font or FONT)
     gs = f.getGlyphSet(); cmap = f.getBestCmap()
     upm = f["head"].unitsPerEm
     capref = f["OS/2"].sCapHeight or 0.7 * upm
@@ -208,7 +208,17 @@ def place(g, sc, dx):
 # black dog: bigger, behind and to the left.  yellow dog: in front, nearer the tree.
 B = dict(sc=1.0, dx=-6.6)
 Y = dict(sc=0.86, dx=7.0)
+# ---- guide dog jackets (drawn once in the dog's own coordinates, then placed on both Labs)
+SANS = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+jk_raw = Polygon([(27.0, 55.8), (13.0, 72.0), (16.5, 77.6), (27.5, 78.2), (36.0, 73.4), (38.6, 63.0), (34.0, 58.2)]).buffer(-2.5, join_style=1).buffer(2.5, join_style=1).intersection(dog)
+strap_raw = unary_union([stroke([(36.8, 65.0), (42.4, 66.6)], 1.5, smooth=False), stroke([(31.0, 77.0), (33.6, 81.6), (37.4, 83.0)], 1.3)]).intersection(dog).difference(jk_raw)
+jk_text_raw = unary_union([text_geom(t, x, y, 1.75, font=SANS, track=0.04) for t, x, y in
+                           [("BC &", 31.6, 63.0), ("ALBERTA", 30.6, 65.9), ("GUIDE", 29.4, 68.8), ("DOGS", 28.4, 71.7)]])
+print("JACKET", [round(v,1) for v in jk_raw.bounds], "TEXT", [round(v,1) for v in jk_text_raw.bounds], "fits", jk_raw.buffer(-0.6).contains(jk_text_raw))
+dog_dark = dog_dark.difference(jk_raw.buffer(0.3))
 bdog, bdark = place(dog, **B), place(dog_dark, **B)
+bjk, bjk_text, bstrap = place(jk_raw, **B), place(jk_text_raw, **B), place(strap_raw, **B)
+yjk, yjk_text, ystrap = place(jk_raw, **Y), place(jk_text_raw, **Y), place(strap_raw, **Y)
 ydog, ydark, ytag = place(dog, **Y), place(dog_dark, **Y), place(tag, **Y)
 
 # ---- tree + star + hanging eyelet
@@ -327,7 +337,9 @@ gapw = wdog.buffer(0.7)
 yin = ydog.intersection(safe_cu)
 yshade = yin.difference(affinity.translate(yin, 3.4, -0.8)).intersection(box(0, 0, 100, BASE_Y - 3.0))   # side facing away from the star
 ygold = unary_union([yin.difference(yshade), yshade.intersection(hatch)]).difference(ydark)
-ygold = unary_union([ygold, ytag.difference(circle(*ytag.centroid.coords[0], 0.3))]).difference(gapw)
+ygold = unary_union([ygold.difference(yjk.buffer(0.15)).difference(ystrap.buffer(0.15)), ytag.difference(circle(*ytag.centroid.coords[0], 0.3))]).difference(gapw)
+_yj = yjk.intersection(safe_silk).buffer(-0.35)
+yjk_silk = unary_union([_yj.difference(_yj.buffer(-0.28)), yjk_text])
 
 # ---- BLACK DOG: black mask. White engraved lines, and a thin gold rim where the star light catches it
 gapy = ydog.buffer(0.9)                     # dark halo that separates the dogs
@@ -338,9 +350,11 @@ brim = brim.intersection(box(0, 0, 100, BASE_Y - 2.0))
 b_eye = place(circle(37.4, 45.4, 0.85), **B)
 b_tag = place(tag, **B)
 b_eye_gold = b_eye.difference(affinity.translate(b_eye, -0.35, 0.45).buffer(-0.1))
-bgold = unary_union([brim.difference(bdark.buffer(0.1)), b_eye, b_tag.difference(circle(*b_tag.centroid.coords[0], 0.3))]).difference(gapy)
+bgold = unary_union([brim.difference(bdark.buffer(0.1)).difference(bjk.buffer(0.4)).difference(bstrap.buffer(0.3)), b_eye, b_tag.difference(circle(*b_tag.centroid.coords[0], 0.3))]).difference(gapy)
 bsilk = bdark.difference(b_eye.buffer(0.3)).difference(place(ring(37.4, 58.4, 1.25, 0.32), **B)).intersection(bdog.buffer(-0.6)).difference(gapy)
 bsilk = bsilk.difference(place(circle(46.9, 40.7, 2.2), **B))
+_bj = bjk.buffer(-0.3)
+bsilk = bsilk.union(_bj.difference(bjk_text.buffer(0.03)).difference(_bj.buffer(-0.7).difference(_bj.buffer(-1.0)).difference(bjk_text.buffer(0.7)))).union(bstrap.buffer(-0.25))
 bsilk = bsilk.union(place(ring(37.4, 45.4, 1.15, 0.25), **B)).union(place(ring(37.4, 58.4, 1.3, 0.25), **B)).difference(gapy)
 
 # ---- TREE: black, white edge lines on every tier, heavier where the top of a tier catches the light
@@ -400,8 +414,8 @@ copper = gold_open.buffer(0.15).intersection(board.buffer(-0.4)).difference(led_
 copper = unary_union([copper, yin.difference(led_keep).difference(gapw)])
 gold_open = gold_open.intersection(copper.buffer(-0.1))
 
-sil_all = unary_union([bsilk.difference(gapw), tree_silk, snow, text, wsilk, psilk])
-sil_all = sil_all.difference(copper.buffer(0.25)).difference(led_keep).difference(bauble_gold.buffer(0.4)).intersection(safe_silk)
+sil_all = unary_union([bsilk.difference(gapw), yjk_silk.difference(gapw), tree_silk, snow, text, wsilk, psilk])
+sil_all = sil_all.difference(gold_open.buffer(0.25)).difference(led_keep).difference(bauble_gold.buffer(0.4)).intersection(safe_silk)
 sil_all = sil_all.buffer(-0.075).buffer(0.075)
 
 # ---------------------------------------------------------------- scale to the final 85 x 85 mm board
