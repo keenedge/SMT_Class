@@ -1,5 +1,5 @@
 import re, math, uuid
-SRC='/root/SMT_Class/smt_tree.kicad_sch'
+SRC='/tmp/orig.kicad_sch'
 s=open(SRC).read()
 def match(s,i):
     d=0

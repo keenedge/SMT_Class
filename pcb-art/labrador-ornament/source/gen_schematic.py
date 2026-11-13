@@ -74,21 +74,21 @@ L("R13","1","CC1"); L("R13","2","GND"); L("R14","1","CC2"); L("R14","2","GND")
 for lib,nm,pt in [("power:VDD","VDD",(250.0,25.0)),("power:GND","GND",(250.0,40.0))]:
     pass
 # LED rows: (resistor ref, LED ref, net)
-ROWS=[("R3","D1","Q0"),("R4","D2","Q0"),("R5","D3","Q1"),("R6","D4","Q1"),("R7","D5","Q2"),("R8","D6","Q3"),("R9","D7","Q4"),("R10","D8","STAR"),("R11","D9","EYES"),("R12","D10","EYES")]
+ROWS=[("R3","D1","STAR"),("R4","D2","Q0"),("R5","D3","Q1"),("R6","D4","Q1"),("R7","D5","Q2"),("R8","D6","Q3"),("R9","D7","Q4"),("R10","D8","STAR"),("R11","D9","EYES"),("R12","D10","EYES")]
 for k,(rr,dd,net) in enumerate(ROWS):
-    y=35+7.62*k
-    place("R3",rr,195.0,y,90,value="1k")
-    place("D1",dd,212.0,y,180)
+    y=35.56+7.62*k
+    place("R3",rr,195.58,y,90,value="1k")
+    place("D1",dd,212.09,y,180)
     L(rr,"1",net); wire(P(rr,"2"),P(dd,"2")); L(dd,"1","GND")
 # diode-OR: Q5,Q6 -> STAR ; Q7,Q9 -> EYES
 for k,(dn,a,b) in enumerate([("D11","Q5","STAR"),("D12","Q6","STAR"),("D13","Q7","EYES"),("D14","Q9","EYES")]):
-    y=118+7.62*k
-    place("D1",dn,205.0,y,180,value="1N4148",footprint="Diode_SMD:D_0805_2012Metric",lib="Device:D")
+    y=118.11+7.62*k
+    place("D1",dn,205.74,y,180,value="1N4148",footprint="Diode_SMD:D_0805_2012Metric",lib="Device:D")
     L(dn,"2",a); L(dn,"1",b)
 
 for ref,src,pt in [("#PWR04","#PWR04",(158.75,45.72)),("#PWR05","#PWR05",(158.75,93.98)),("#FLG01","#FLG01",(158.75,45.72)),("#FLG02","#FLG02",(158.75,93.98))]:
     place(src,ref,pt[0],pt[1])
-NOTE = "10-stage sequence (4017 outputs): Q0 tree group 1 (D1,D2) | Q1 group 2 (D3,D4) | Q2 group 3 (D5) | Q3 group 4 (D6) | Q4 group 5 (D7) | Q5,Q6 star (D8) | Q7 puppy eyes (D9,D10) | Q8 all off | Q9 puppy eyes. 5 V USB only. U1 must be a CMOS 555 (TLC555) and U2 a 74HC4017."
+NOTE = "10-stage sequence (4017 outputs): Q0 tree group 1 (D2) | Q1 group 2 (D3,D4) | Q2 group 3 (D5) | Q3 group 4 (D6) | Q4 group 5 (D7) | Q5,Q6 star (D1,D8) | Q7 puppy eyes (D9,D10) | Q8 all off | Q9 puppy eyes. 5 V USB only. U1 must be a CMOS 555 (TLC555) and U2 a 74HC4017."
 labels.append(f'\t(text "{NOTE}"\n\t\t(exclude_from_sim no)\n\t\t(at 120 20 0)\n\t\t(effects\n\t\t\t(font\n\t\t\t\t(size 1.27 1.27)\n\t\t\t)\n\t\t\t(justify left)\n\t\t)\n\t\t(uuid "{nu()}")\n\t)\n')
 open('out_body.txt','w').write(''.join(out)+''.join(labels)+''.join(wires)+''.join(ncs))
 print(len(out),len(labels),len(wires),len(ncs))
