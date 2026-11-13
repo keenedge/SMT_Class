@@ -1,6 +1,6 @@
 # "Silent Night" dogs-and-tree ornament: KiCad layer SVGs
 
-The board itself is cut to the silhouette of the scene: a black Labrador and a yellow Labrador look up at a Christmas tree with a star on top. A small white dog with an antler tied to its head sits in front of them, and a wrapped present sits bottom right. A ground strip ties everything into one board.
+The board itself is cut to the silhouette of the scene: a black Labrador and a yellow Labrador look up at a Christmas tree with a star on top. A small white dog with an antler tied to its head sits in front of them, and a wrapped present with a big bow sits bottom right, with a puppy's tail poking out from under the lid. A ground strip ties everything into one board.
 
 The board fits inside an **85 x 85 mm** square (83.3 mm wide, 85.0 mm tall). Every SVG uses the origin at the top-left corner of that square, drawn at 1 SVG unit = 1 mm. Text has already been turned into outlines, and shapes with holes are split into hole-free pieces.
 
@@ -10,18 +10,19 @@ The board fits inside an **85 x 85 mm** square (83.3 mm wide, 85.0 mm tall). Eve
 - **Black dog:** plain black mask with white silkscreen line work, a thin gold rim on the edges facing the star, and a gold eye and tag.
 - **Guide dog jackets:** both Labs wear a training jacket lettered "BCAGD" (BC & Alberta Guide Dogs), with the letters following the curve of the dog's back. The black dog's jacket is solid white silkscreen with the letters left black. The yellow dog's jacket is black mask with a white outline and white letters. The letters are about 2.6 mm tall on the black dog and 2.2 mm on the yellow dog. To change the word, set `JK_WORD` when running the build script.
 - **White dog:** solid white silkscreen with black details and a gold bell.
+- **Present:** gold ribbon and bow, white box outline. The puppy tail is black mask with a white outline and stripes.
 - **Tree:** black mask with white edge lines. The dogs and the present sit in front of it. The star, the hanging eyelet and the present's ribbon are gold.
 
 ## Balance
-The 3 mm hanging hole is above the star at X = 52.80 mm. The CR2032 holder goes on the back behind the present, centred at X = 70.62, Y = 73.32, and acts as the counterweight.
+The 3 mm hanging hole is above the star at X = 52.97 mm. The CR2032 holder goes on the back behind the present, centred at X = 70.62, Y = 73.32, and acts as the counterweight.
 
 | Item | Mass used | Centre X |
 |---|---|---|
-| Bare board (1.6 mm FR4, 33 cm²) | 9.8 g | 44.5 mm |
+| Bare board (1.6 mm FR4, 33 cm²) | 9.9 g | 45.0 mm |
 | CR2032 cell + SMD holder | 4.5 g (3.0 g + 1.5 g) | 70.6 mm |
-| **Combined** | 14.3 g | **52.76 mm** |
+| **Combined** | 14.4 g | **53.00 mm** |
 
-With those numbers the centre of mass is 0.04 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
+With those numbers the centre of mass is 0.03 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
 
 These are estimates. Weigh your actual holder: every 1 g of difference in the battery assembly moves the balance point about 1.25 mm (about 1.2°). To trim, slide the holder: moving it 1 mm sideways moves the balance point about 0.3 mm. The ICs and passives weigh under 1 g in total. Placing them near X = 53 on the back keeps them out of the balance.
 

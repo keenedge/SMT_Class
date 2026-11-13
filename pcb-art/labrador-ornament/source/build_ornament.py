@@ -254,7 +254,7 @@ yjk, yjk_text, ystrap = place(jk_raw, **Y), place(jk_text_raw, **Y), place(strap
 ydog, ydark, ytag = place(dog, **Y), place(dog_dark, **Y), place(tag, **Y)
 
 # ---- tree + star + hanging eyelet
-TX = float(os.environ.get("TX", 62.0))
+TX = float(os.environ.get("TX", 62.2))
 STAR_C = (TX, 13.6)
 tiers = [(21.0, 35.5, 12.0), (27.5, 49.0, 17.5), (37.5, 63.0, 22.5), (49.5, 77.0, 27.0)]
 tier_polys = []
@@ -307,8 +307,16 @@ wdark = unary_union([
 # ---- wrapped present, bottom right: the CR2032 holder sits behind it on the back as the counterweight
 PX0, PX1, PY0 = 68.5, 97.0, 71.0      # 24.5 x 24.5 mm at final size, room for an SMD CR2032 holder
 BAT_C = ((PX0 + PX1) / 2, 86.0)
-present = unary_union([box(PX0, PY0, PX1, 99.6), box(PX0 - 1.5, PY0 - 3.2, PX1 + 1.5, PY0 + 0.8),
-                       circle(BAT_C[0] - 3.4, PY0 - 5.6, 3.0), circle(BAT_C[0] + 3.4, PY0 - 5.6, 3.0)])
+BX, KY = BAT_C[0] - 3.4, PY0 - 4.6          # bow knot
+def _loop(sg, k=0.9):
+    return smooth_poly([(BX + sg * k * x, KY + k * y) for x, y in [(0.6, 0.2), (3.2, -4.4), (7.6, -5.0), (9.4, -2.2), (8.4, 1.0), (4.0, 1.2)]])
+bow_loops = unary_union([_loop(1), _loop(-1)])
+bow_knot = box(BX - 1.5, KY - 1.6, BX + 1.5, KY + 1.8).buffer(0.6, join_style=1)
+bow = unary_union([bow_loops, bow_knot])
+# puppy tail poking out from under the lid, mid-wag
+_tp = catmull([(93.4, PY0 - 2.0), (92.6, PY0 - 6.5), (93.2, PY0 - 11.0), (95.4, PY0 - 14.6), (96.6, PY0 - 16.6)], closed=False, n=8)
+ptail = unary_union([Point(p).buffer(2.3 - 1.0 * i / (len(_tp) - 1)) for i, p in enumerate(_tp)])
+present = unary_union([box(PX0, PY0, PX1, 99.6), box(PX0 - 1.5, PY0 - 3.2, PX1 + 1.5, PY0 + 0.8), bow, ptail])
 
 raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present])
 # make it routable: inside corners get >= 1 mm radius, and slivers thinner than 1.6 mm are removed
@@ -432,10 +440,21 @@ wsilk = wdog.intersection(safe_silk).difference(wdark)
 wbell = circle(*wl([(8.6, 10.6)])[0], 0.6)
 # present: gold ribbon + bow, white outline
 pbox = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(safe_cu)
-ribbon = unary_union([box(BAT_C[0] - 1.6, PY0 - 3.2, BAT_C[0] + 1.6, 99.6), box(PX0 - 1.5, PY0 - 2.4, PX1 + 1.5, PY0),
-                      ring(BAT_C[0] - 3.4, PY0 - 5.6, 1.7, 1.3), ring(BAT_C[0] + 3.4, PY0 - 5.6, 1.7, 1.3)]).intersection(safe_cu)
+# bow: gold loops with dark centres so they read as loops, a knot, and two ribbon ends draped over the box
+_holes = unary_union([affinity.scale(_loop(sg), 0.42, 0.42, origin=(BX + sg * 4.9, KY - 1.7)) for sg in (1, -1)])
+_ends = unary_union([Polygon([(BX - 1.2, KY + 1.4), (BX + 0.6, KY + 1.4), (BX - 4.4, PY0 + 9.4), (BX - 5.6, PY0 + 7.6), (BX - 7.4, PY0 + 8.6)]),
+                     Polygon([(BX + 1.2, KY + 1.4), (BX - 0.6, KY + 1.4), (BX + 4.4, PY0 + 9.4), (BX + 5.6, PY0 + 7.6), (BX + 7.4, PY0 + 8.6)])])
+_knotline = bow_knot.buffer(0.35).difference(bow_knot.buffer(-0.05))
+bow_gold = unary_union([bow_loops.difference(_holes), _ends]).difference(_knotline).union(bow_knot.buffer(-0.05))
+lid_band = box(PX0 - 1.5, PY0 - 2.4, PX1 + 1.5, PY0)
+vband = box(BX - 1.5, PY0 + 0.8, BX + 1.5, 99.6)
+ribbon = unary_union([vband.difference(_ends.buffer(0.35)), lid_band.difference(bow.buffer(0.35)).difference(_ends.buffer(0.35)), bow_gold,
+                      ]).intersection(safe_cu)
 pin = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(board).buffer(-0.8)
 psilk = pin.difference(pin.buffer(-0.35)).difference(ribbon.buffer(0.3))
+_pt = ptail.intersection(board).buffer(-0.55).difference(box(0, PY0 - 3.2 - 0.2, 100, 100))
+_ticks = unary_union([stroke([(_tp[i][0] - 0.9, _tp[i][1] + 0.5), (_tp[i][0] + 0.5, _tp[i][1] - 0.5)], 0.3, smooth=False) for i in range(6, len(_tp) - 5, 5)])
+psilk = unary_union([psilk, _pt.difference(_pt.buffer(-0.38)), _ticks.intersection(_pt)])
 bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
 
 # ================================================================ assemble
