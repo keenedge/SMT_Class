@@ -1,13 +1,13 @@
-# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 100 x 100 mm box)
-D1, 65.00, 66.00, 0
-D2, 68.00, 57.00, 0
-D3, 58.00, 57.00, 0
-D4, 63.00, 50.00, 0
-D5, 65.50, 44.00, 0
-D6, 57.00, 41.60, 0
-D7, 58.50, 37.50, 0
-D8, 62.40, 31.40, 0
-D9, 59.40, 29.00, 0
-D10, 60.00, 13.60, 0
-BT1 (CR2032 holder centre, B.Cu), 84.00, 86.00, 0
-# hanging hole 60.00, 3.90; centre of mass with battery 59.97, 76.10
+# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 85 x 85 mm box)
+D1, 57.10, 55.29, 0
+D2, 59.89, 48.64, 0
+D3, 51.09, 48.85, 0
+D4, 55.38, 42.41, 0
+D5, 57.74, 37.48, 0
+D6, 50.23, 35.20, 0
+D7, 51.73, 31.47, 0
+D8, 53.23, 27.30, 0
+D9, 52.80, 23.40, 0
+D10, 52.80, 11.16, 0
+BT1 (CR2032 holder centre, B.Cu), 70.62, 73.32, 0
+# hanging hole 52.80, 3.09; centre of mass with battery 52.76, 65.07

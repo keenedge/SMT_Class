@@ -197,6 +197,7 @@ tag = circle(37.4, 58.4, 0.95)  # gold collar tag
 dog_gold = unary_union([dog.difference(dog_dark), tag.difference(circle(37.4, 58.4, 0.3))])
 
 # ================================================================ TWO DOGS + TREE: the board IS the silhouette
+S = 85.0 / 99.0               # the scene is drawn in a 100 mm design space, then scaled so the board fits 85 x 85 mm
 dvec = (-0.58, 0.81)          # direction light travels (from the star, down-left)
 BASE_Y = 89.8                 # where paws and trunk meet the ground strip
 
@@ -211,9 +212,9 @@ bdog, bdark = place(dog, **B), place(dog_dark, **B)
 ydog, ydark, ytag = place(dog, **Y), place(dog_dark, **Y), place(tag, **Y)
 
 # ---- tree + star + hanging eyelet
-TX = float(os.environ.get('TX', 60.0))
+TX = float(os.environ.get("TX", 62.0))
 STAR_C = (TX, 13.6)
-tiers = [(21.0, 35.0, 10.5), (28.0, 48.5, 15.5), (38.0, 62.5, 20.5), (50.0, 77.0, 25.5)]
+tiers = [(21.0, 35.5, 12.0), (27.5, 49.0, 17.5), (37.5, 63.0, 22.5), (49.5, 77.0, 27.0)]
 tier_polys = []
 for k, (ya, yb, hw) in enumerate(tiers):
     n = 5 + k
@@ -229,10 +230,10 @@ for k, (ya, yb, hw) in enumerate(tiers):
     pts += [(TX - hw * 0.80, ya + (yb - ya) * 0.96), (TX - hw * 0.50, ya + (yb - ya) * 0.75), (TX - hw * 0.22, ya + (yb - ya) * 0.40)]
     tier_polys.append(Polygon(pts).buffer(0))
 trunk = box(TX - 3.0, 74.0, TX + 3.0, BASE_Y + 1)
-neck = box(TX - 2.2, STAR_C[1], TX + 2.2, 26.0)
+neck = box(TX - 2.6, STAR_C[1], TX + 2.6, 26.0)
 star_board = star(*STAR_C, 7.0, 3.9)
-HOLE_C, HOLE_R = (TX, 3.9), 1.5       # 3 mm hanging hole
-eye_tab = circle(*HOLE_C, 3.3)
+HOLE_C, HOLE_R = (TX, 4.2), 1.5 / S   # 3 mm hanging hole at final size
+eye_tab = circle(*HOLE_C, 3.6)
 tree = unary_union(tier_polys + [trunk, neck])
 
 # ---- ground strip that ties it all together (USB-C goes on its flat bottom edge)
@@ -262,39 +263,56 @@ wdark = unary_union([
 ])
 
 # ---- wrapped present, bottom right: the CR2032 holder sits behind it on the back as the counterweight
-PX0, PX1, PY0 = 71.0, 97.0, 72.0
+PX0, PX1, PY0 = 68.5, 97.0, 71.0      # 24.5 x 24.5 mm at final size, room for an SMD CR2032 holder
 BAT_C = ((PX0 + PX1) / 2, 86.0)
 present = unary_union([box(PX0, PY0, PX1, 99.6), box(PX0 - 1.5, PY0 - 3.2, PX1 + 1.5, PY0 + 0.8),
                        circle(BAT_C[0] - 3.4, PY0 - 5.6, 3.0), circle(BAT_C[0] + 3.4, PY0 - 5.6, 3.0)])
 
 raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present])
 # make it routable: inside corners get >= 1 mm radius, and slivers thinner than 1.6 mm are removed
-outline = raw.buffer(1.0, join_style=1).buffer(-1.0, join_style=1)
-outline = outline.buffer(-0.8, join_style=1).buffer(0.8, join_style=1)
+outline = raw.buffer(1.0 / S, join_style=1).buffer(-1.0 / S, join_style=1)
+outline = outline.buffer(-0.8 / S, join_style=1).buffer(0.8 / S, join_style=1)
 outline = max(polys(outline), key=lambda p: p.area)
 outline = Polygon(outline.exterior)          # no internal cut-outs except the hanging hole
 hole = circle(*HOLE_C, HOLE_R)
 board = outline.difference(hole)
-safe_cu = board.buffer(-0.5)                 # copper keep-back from the edge
-safe_silk = board.buffer(-0.35)
+safe_cu = board.buffer(-0.5 / S)                 # copper keep-back from the edge
+safe_silk = board.buffer(-0.35 / S)
 # ---- balance: where does it hang?  FR4 1.6 mm ~ 2.96 mg/mm2; CR2032 ~3.0 g + SMD holder ~1.5 g
-M_BOARD = board.area * 0.00296
+M_BOARD = board.area * S * S * 0.00296
 M_BAT = float(os.environ.get('MBAT', 4.5))
 cx = (board.centroid.x * M_BOARD + BAT_C[0] * M_BAT) / (M_BOARD + M_BAT)
 cy = (board.centroid.y * M_BOARD + BAT_C[1] * M_BAT) / (M_BOARD + M_BAT)
 tilt = math.degrees(math.atan2(cx - HOLE_C[0], cy - HOLE_C[1]))
-print(f"BALANCE TX={TX} board={M_BOARD:.1f}g bat={M_BAT}g com=({cx:.2f},{cy:.2f}) hole_x={HOLE_C[0]} offset={cx-HOLE_C[0]:+.2f}mm tilt={tilt:+.2f}deg bare_board_x={board.centroid.x:.2f}")
+OFFSET_MM = (cx - HOLE_C[0]) * S
+print(f"BALANCE TX={TX} board={M_BOARD:.1f}g bat={M_BAT}g com=({cx:.2f},{cy:.2f}) hole_x={HOLE_C[0]} offset={OFFSET_MM:+.2f}mm(final) tilt={tilt:+.2f}deg bare_board_x={board.centroid.x:.2f}")
 print("board bounds", [round(v, 2) for v in outline.bounds])
 
 # ---- LEDs: D1..D9 climb the tree, D10 is the heart of the star
-LEDS = [(TX + dx, y) for dx, y in [(5.0, 66.0), (8.0, 57.0), (-2.0, 57.0), (3.0, 50.0), (5.5, 44.0), (-3.0, 41.6),
-        (-1.5, 37.5), (2.4, 31.4), (-0.6, 29.0)]] + [STAR_C]
 occl = unary_union([bdog, ydog, wdog, present]).buffer(1.6)
+_ok_zone = safe_cu.buffer(-0.25 / S)
+def _valid(x, y, placed):
+    pad = box(x - 1.5 / S, y - 0.75 / S, x + 1.5 / S, y + 0.75 / S)
+    keep = box(x - 2.2 / S, y - 1.0 / S, x + 2.2 / S, y + 1.0 / S)
+    if not _ok_zone.contains(pad) or occl.intersects(keep):
+        return False
+    return all(abs(x - px) > 5.4 / S or abs(y - py) > 3.6 / S for px, py in placed)
+LEDS = []
+for dx, y in [(5.0, 66.0), (8.5, 57.0), (-2.0, 57.5), (3.0, 50.0), (6.0, 44.0), (-3.0, 41.6), (-1.5, 37.0), (0.5, 32.4), (0.0, 27.6)]:
+    best = None
+    for i in range(-16, 17):
+        for j in range(-12, 13):
+            x, yy = TX + dx + i * 0.25, y + j * 0.25
+            dd = (i * 0.25) ** 2 + (j * 0.25) ** 2
+            if (best is None or dd < best[0]) and _valid(x, yy, LEDS):
+                best = (dd, x, yy)
+    if best is None:
+        print("LED NO ROOM", dx, y); best = (0, TX + dx, y)
+    LEDS.append((round(best[1], 2), round(best[2], 2)))
+LEDS.append(STAR_C)
+led_keep = unary_union([box(x - 2.2 / S, y - 1.0 / S, x + 2.2 / S, y + 1.0 / S) for x, y in LEDS])
 for x, y in LEDS:
-    if occl.intersects(box(x - 2.4, y - 1.1, x + 2.4, y + 1.1)): print("LED HITS DOG/PRESENT", x, y)
-led_keep = unary_union([box(x - 2.4, y - 1.1, x + 2.4, y + 1.1) for x, y in LEDS])
-for x, y in LEDS:
-    if not safe_cu.contains(box(x - 1.5, y - 0.75, x + 1.5, y + 0.75)): print("LED OFF BOARD", x, y)
+    if not safe_cu.contains(box(x - 1.5 / S, y - 0.75 / S, x + 1.5 / S, y + 0.75 / S)): print("LED OFF BOARD", x, y)
 led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
 
 # ---- YELLOW DOG: gold, with engraved black details and a hatched shadow down its back
@@ -350,7 +368,7 @@ bauble_gold = unary_union([unary_union([box(x - 0.7, y - 2.55, x + 0.7, y - 1.85
 
 # ---- STAR + eyelet: gold
 star_gold = star(*STAR_C, 6.2, 3.3).difference(circle(*STAR_C, 2.8))
-eyelet = ring(*HOLE_C, HOLE_R + 0.95, 0.9)
+eyelet = ring(*HOLE_C, HOLE_R + 1.0, 0.9)
 
 # ---- GROUND: lit snow line, the dogs' shadows, lettering
 gtop = BASE_Y + 1.2
@@ -386,8 +404,28 @@ sil_all = unary_union([bsilk.difference(gapw), tree_silk, snow, text, wsilk, psi
 sil_all = sil_all.difference(copper.buffer(0.25)).difference(led_keep).difference(bauble_gold.buffer(0.4)).intersection(safe_silk)
 sil_all = sil_all.buffer(-0.075).buffer(0.075)
 
+# ---------------------------------------------------------------- scale to the final 85 x 85 mm board
+_b = outline.bounds
+_dx = (85.0 - (_b[2] - _b[0]) * S) / 2 - _b[0] * S
+_dy = (85.0 - (_b[3] - _b[1]) * S) / 2 - _b[1] * S
+def fin(g):
+    return affinity.translate(affinity.scale(g, S, S, origin=(0, 0)), _dx, _dy)
+def finp(p):
+    return (p[0] * S + _dx, p[1] * S + _dy)
+outline, hole, copper, gold_open, sil_all = fin(outline), fin(hole), fin(copper), fin(gold_open), fin(sil_all)
+LEDS = [finp(p) for p in LEDS]
+BAT_C, HOLE_C = finp(BAT_C), finp(HOLE_C)
+cx, cy = finp((cx, cy))
+led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
+bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
+print("FINAL bounds", [round(v, 2) for v in outline.bounds], "hole", [round(v, 2) for v in HOLE_C], "com", round(cx, 2), round(cy, 2))
+# manufacturability at final size: thinnest features
+for nm, g in [("mask", gold_open), ("silk", sil_all)]:
+    thin = g.difference(g.buffer(-0.06).buffer(0.06))
+    print(nm, "area thinner than 0.12 mm:", round(thin.area, 3), "mm2")
+
 # ---------------------------------------------------------------- write SVGs
-HDR = '<?xml version="1.0" encoding="UTF-8"?>\n<!-- {c} | 100 x 100 mm, origin top-left, 1 unit = 1 mm. Import into KiCad at X=0 Y=0, scale 1.0 -->\n<svg xmlns="http://www.w3.org/2000/svg" width="100mm" height="100mm" viewBox="0 0 100 100">\n'
+HDR = '<?xml version="1.0" encoding="UTF-8"?>\n<!-- {c} | 85 x 85 mm, origin top-left, 1 unit = 1 mm. Import into KiCad at X=0 Y=0, scale 1.0 -->\n<svg xmlns="http://www.w3.org/2000/svg" width="85mm" height="85mm" viewBox="0 0 85 85">\n'
 
 def ring_d(coords):
     c = list(coords)
@@ -413,7 +451,7 @@ write("04_F.Silkscreen.svg", "F.Silkscreen: black dog line work, tree edges, sno
 write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 outlines, F.Cu) and the CR2032 cell position (20 mm circle, holder goes on B.Cu)",
       fill_paths(bat_guide.union(led_outline).union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
 with open(os.path.join(OUT, "_leds.txt"), "w") as f:
-    f.write("# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 100 x 100 mm box)\n")
+    f.write("# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 85 x 85 mm box)\n")
     for i, (x, y) in enumerate(LEDS):
         f.write(f"D{i+1}, {x:.2f}, {y:.2f}, 0\n")
     f.write(f"BT1 (CR2032 holder centre, B.Cu), {BAT_C[0]:.2f}, {BAT_C[1]:.2f}, 0\n")
@@ -435,7 +473,7 @@ def led_svg(x, y, on):
 def preview(lit, name):
     body = "".join(led_svg(x, y, i in lit) for i, (x, y) in enumerate(LEDS))
     with open(os.path.join(OUT, name), "w") as f:
-        f.write(f'''<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="-2 -2 104 104">
+        f.write(f'''<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="-2 -2 89 89">
 <defs>
  <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2a2a30"/><stop offset="1" stop-color="{MASK}"/></linearGradient>
  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{GOLD_HI}"/><stop offset="0.55" stop-color="{GOLD}"/><stop offset="1" stop-color="#a8822c"/></linearGradient>
