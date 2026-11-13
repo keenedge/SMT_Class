@@ -254,7 +254,7 @@ yjk, yjk_text, ystrap = place(jk_raw, **Y), place(jk_text_raw, **Y), place(strap
 ydog, ydark, ytag = place(dog, **Y), place(dog_dark, **Y), place(tag, **Y)
 
 # ---- tree + star + hanging eyelet
-TX = float(os.environ.get("TX", 62.45))
+TX = float(os.environ.get("TX", 56.65))
 STAR_C = (TX, 13.6)
 tiers = [(21.0, 35.5, 12.0), (27.5, 49.0, 17.5), (37.5, 63.0, 22.5), (49.5, 77.0, 27.0)]
 tier_polys = []
@@ -343,13 +343,13 @@ hole = circle(*HOLE_C, HOLE_R)
 board = outline.difference(hole)
 _bx = BAT_C[0]
 _best = max(((board.boundary.distance(Point(_bx, yy)), yy) for yy in [60 + 0.25 * k for k in range(0, 130)] if board.contains(Point(_bx, yy))))
-BAT_C = (_bx, _best[1])
+BAT_C = (_bx + 1.05 / S, 96.0)      # USB-C receptacle at the bottom edge of the gift box (no cell)
 print(f"BATTERY: biggest holder circle at x={_bx:.1f}: diameter {2*_best[0]*S:.1f} mm final, centre y={_best[1]:.1f} design")
 safe_cu = board.buffer(-0.5 / S)                 # copper keep-back from the edge
 safe_silk = board.buffer(-0.35 / S)
 # ---- balance: where does it hang?  FR4 1.6 mm ~ 2.96 mg/mm2; CR2032 ~3.0 g + SMD holder ~1.5 g
 M_BOARD = board.area * S * S * 0.00296
-M_BAT = float(os.environ.get('MBAT', 4.5))
+M_BAT = float(os.environ.get('MBAT', 1.5))
 cx = (board.centroid.x * M_BOARD + BAT_C[0] * M_BAT) / (M_BOARD + M_BAT)
 cy = (board.centroid.y * M_BOARD + BAT_C[1] * M_BAT) / (M_BOARD + M_BAT)
 tilt = math.degrees(math.atan2(cx - HOLE_C[0], cy - HOLE_C[1]))
@@ -369,8 +369,8 @@ def _valid(x, y, placed):
 LEDS = []
 for dx, y in [(2.5, 62.0), (10.5, 59.0), (-2.5, 52.5), (8.5, 49.5), (2.5, 43.0), (1.0, 36.5), (0.5, 29.5)]:      # seven on the tree in five groups: 2, 2, 1, 1, 1 from the bottom up
     best = None
-    for i in range(-16, 17):
-        for j in range(-12, 13):
+    for i in range(-32, 33):
+        for j in range(-20, 21):
             x, yy = TX + dx + i * 0.25, y + j * 0.25
             dd = (i * 0.25) ** 2 + (j * 0.25) ** 2
             if (best is None or dd < best[0]) and _valid(x, yy, LEDS):
@@ -481,7 +481,7 @@ _ends = LROT(unary_union([Polygon([(BX - 1.2, KY + 1.4), (BX + 0.6, KY + 1.4), (
 _knotline = bow_knot.buffer(0.35).difference(bow_knot.buffer(-0.05))
 bow_gold = unary_union([bow_loops.difference(_holes), _ends]).difference(_knotline).union(bow_knot.buffer(-0.05))
 lid_band = LROT(box(PX0 - 1.5, BT - 3.3, PX1 + 1.5, BT - 0.7))
-vband = box(BX - 1.5, BT, BX + 1.5, 99.6)
+vband = box(BX - 1.5, BT, BX + 1.5, 99.6 - 11.0 / S)   # ribbon stops above the USB-C connector
 ribbon = unary_union([vband.difference(_ends.buffer(0.35)).difference(lid.buffer(0.35)), lid_band.difference(bow.buffer(0.35)).difference(_ends.buffer(0.35)), bow_gold,
                       ]).intersection(safe_cu)
 pin = box(PX0, BT, PX1, 99.6).intersection(board).buffer(-0.8)
@@ -542,16 +542,17 @@ PARTS.append(("U2 CD4017 SOIC-16", "ic", _lx + 3.2, _by0 + 8.0, 6.4, 10.4))
 PARTS.append(("U1 TLC555 SOIC-8", "ic", _lx + 3.2, _by0 + 17.6, 6.4, 5.4))
 _cxl = _lx + 8.4                      # resistor column left of the ribbon
 _ri = 0
-for k in range(11):                   # 0603 passives, 3.1 x 1.0 mm footprint extent, 1.7 mm pitch
+for k in range(8):                   # 0603 passives, 3.1 x 1.0 mm footprint extent, 1.7 mm pitch
     PARTS.append((f"R/C/D {_ri+1}", "passive", _cxl, _by0 + 2.6 + 1.75 * k, 3.1, 1.0)); _ri += 1
-_rx = (_rbx + 1.3 + _bx1 - 1.6) / 2   # area right of the ribbon
-for k in range(7):
+_rx = (_rbx + 1.3 + _bx1 - 1.6) / 2 + 1.0   # area right of the ribbon
+for k in range(9):
     for j in range(2):
         PARTS.append((f"R/C/D {_ri+1}", "passive", _rx - 0.0, _by0 + 6.4 + 1.75 * k, 3.1, 1.0)) if j == 0 else None
         if j == 0: _ri += 1
-HOLDER_PADS = [("BT1 +", _rx, _by0 + 3.0), ("BT1 -", _rx, _by1 - 3.2)]
+USB_C = (BAT_C[0], _by1 - 3.8, 9.2, 7.6)       # J1 USB-C receptacle, mouth at the bottom edge of the board
+HOLDER_PADS = []
 parts_outline = unary_union([_rect(*p[2:]).exterior.buffer(0.05) for p in PARTS])
-pad_guide = unary_union([ring(x, y, 1.1, 0.1).union(Point(x, y).buffer(0.5, 16).difference(Point(x, y).buffer(0.4, 16))) for _, x, y in HOLDER_PADS])
+pad_guide = _rect(*USB_C).exterior.buffer(0.05)
 _bare_fx = finp((board.centroid.x, board.centroid.y))[0]
 print(f"FINALX bare={_bare_fx:.2f} battery={BAT_C[0]:.2f} combined={cx:.2f} hole={HOLE_C[0]:.2f} board_g={M_BOARD:.1f} tot_g={M_BOARD+M_BAT:.1f} bat_xy=({BAT_C[0]:.2f},{BAT_C[1]:.2f})")
 print("FINAL bounds", [round(v, 2) for v in outline.bounds], "hole", [round(v, 2) for v in HOLE_C], "com", round(cx, 2), round(cy, 2))
@@ -585,14 +586,13 @@ write("02_F.Cu.svg", "F.Cu: copper under the gold art (ENIG). Filled shapes = co
 write("03_F.Mask.svg", "F.Mask: filled shapes = solder mask OPENINGS = exposed ENIG gold", fill_paths(gold_open))
 write("04_F.Silkscreen.svg", "F.Silkscreen: black dog line work, tree edges, snow line and caption (white legend, clear of the 10 LEDs)", fill_paths(sil_all))
 write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 outlines, F.Cu) and the CR2032 cell position (20 mm circle, holder goes on B.Cu)",
-      fill_paths(bat_guide.union(led_outline).union(parts_outline).union(pad_guide).union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
+      fill_paths(led_outline.union(parts_outline).union(pad_guide).union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
 with open(os.path.join(OUT, "_leds.txt"), "w") as f:
     f.write("# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 85 x 85 mm box)\n")
     for i, (x, y) in enumerate(LEDS):
         f.write(f"D{i+1}, {x:.2f}, {y:.2f}, {LED_ROT[i]}   # {LED_NAME[i]}\n")
     for p in PARTS: f.write(f"# front SMT zone: {p[0]}, centre {p[2]:.2f}, {p[3]:.2f}, extent {p[4]:.1f} x {p[5]:.1f} mm\n")
-    for n_, x_, y_ in HOLDER_PADS: f.write(f"{n_} through-hole pad (2.2 mm pad, 1.0 mm hole), {x_:.2f}, {y_:.2f}\n")
-    f.write(f"BT1 (CR2032 holder centre, B.Cu), {BAT_C[0]:.2f}, {BAT_C[1]:.2f}, 0\n")
+    f.write(f"J1 USB-C receptacle (SMT, F.Cu), centre {USB_C[0]:.2f}, {USB_C[1]:.2f}, extent {USB_C[2]} x {USB_C[3]} mm, mouth on the bottom edge\n")
     f.write(f"# hanging hole {HOLE_C[0]:.2f}, {HOLE_C[1]:.2f}; centre of mass with battery {cx:.2f}, {cy:.2f}\n")
 
 MASK, GOLD, GOLD_HI, SILK = "#121214", "#d9b14a", "#f0d27a", "#efeee8"

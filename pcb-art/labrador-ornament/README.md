@@ -14,24 +14,24 @@ The board fits inside an **85 x 85 mm** square (83.7 mm wide, 84.8 mm tall). Eve
 - **Tree:** black mask with white edge lines. The dogs and the present sit in front of it. The star, the hanging eyelet and the present's ribbon are gold.
 
 ## Balance
-The 3 mm hanging hole is above the star at X = 52.79 mm. The CR2032 holder goes on the back behind the present, centred at X = 70.15, Y = 72.64, and acts as the counterweight.
+The 3 mm hanging hole is above the star at X = 47.83 mm. There is no battery: the board is powered over USB-C, and the USB-C receptacle (about 1 g) plus the ICs and passives, all in the gift box, act as a small counterweight.
 
 | Item | Mass used | Centre X |
 |---|---|---|
-| Bare board (1.6 mm FR4, 33 cm²) | 10.0 g | 45.0 mm |
-| CR2032 cell + SMD holder | 4.5 g (3.0 g + 1.5 g) | 70.2 mm |
-| **Combined** | 14.5 g | **52.85 mm** |
+| Bare board (1.6 mm FR4, 33 cm²) | 9.8 g | 44.3 mm |
+| USB-C receptacle + ICs + passives (front of the gift box) | 1.5 g (estimate) | 71.2 mm |
+| **Combined** | 11.3 g | **47.84 mm** |
 
-With those numbers the centre of mass is 0.05 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
+With those numbers the centre of mass is 0.01 mm from the hang line, so it hangs straight. To get there the tree and hang point moved left by about 5 mm compared to the coin cell version, because there is no heavy battery on the right any more.
 
-These are estimates. Weigh your actual holder: every 1 g of difference in the battery assembly moves the balance point about 1.25 mm (about 1.2°). To trim, slide the holder: moving it 1 mm sideways moves the balance point about 0.3 mm. The ICs and passives weigh under 1 g in total. They now sit on the front in the box, close to the battery, so they shift the balance by well under 0.1 mm.
+These are estimates. Weigh the real parts: every 0.5 g of difference in the parts group moves the balance point about 0.5 mm, about 0.5°. The connector sits at the bottom edge, so a hanging USB cable will pull the ornament slightly. Unplug it when displaying, or run the cable straight down from the connector.
 
 ## Outline notes
 - Inside corners have a radius of at least 1 mm, and nothing is narrower than 1.6 mm. The narrowest part is the stalk under the star (4.5 mm).
 - Gold stops 0.5 mm short of the board edge.
 
 ## LEDs and power (from smt_tree.kicad_sch)
-The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz. There are 10 LEDs: 7 on the tree in 5 groups, 1 in the star, 2 in the puppy's eyes, and none on the dogs. `_leds.txt` has every XY position and rotation, plus the battery holder centre. The schematic file has **not** been edited yet.
+The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz, powered from 5 V USB. There are 10 LEDs: 7 on the tree in 5 groups, 1 in the star, 2 in the puppy's eyes, and none on the dogs. `_leds.txt` has every XY position and rotation, plus the USB-C connector position. The schematic file has **not** been edited yet.
 
 | LED | Where | Group | Rotation |
 |---|---|---|---|
@@ -68,10 +68,10 @@ The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz. There are 10 LEDs: 
 - Assumption: each tree group lights alone, one after another, so the light climbs the tree. If you want the tree to build up (earlier groups stay on), the groups would need diode-OR from the later outputs instead.
 - Tree and star LEDs have a 4.4 x 2.0 mm clear area; the puppy eyes have a tighter 3.5 x 2.0 mm area, so their vias should sit close to the pads or in them.
 - The puppy's eyes are only 3.4 mm apart, so D9 and D10 stand upright side by side. 0805 parts fit but cover most of the face; 0603 would look better.
-- **Running from a CR2032 (3 V) needs changes to the schematic.** A standard NE555 needs at least 4.5 V, so swap it for a CMOS 555 such as TLC555 or LMC555. Blue and white LEDs will be dim at 3 V, so use red, amber or yellow-green, or lower the resistors. The USB-C connector and its 5k1 resistors are no longer needed.
-- **Parts layout.** All SMT parts, the two ICs, about 18 resistors, capacitors and diodes, go on the front inside the gift box, together with the LEDs. The only through-hole part is the CR2032 holder: it is mounted on the back, centred at X = 70.15, Y = 72.64, and its two pins are soldered from the front.
-  - The guide layer shows the reserved zones: U2 CD4017 (SOIC-16) and U1 TLC555 (SOIC-8) in the left of the box, a column of 11 passive footprints beside them, 7 more passives right of the ribbon, and two holder pads (2.2 mm pad, 1.0 mm hole) at X = 76.97, Y = 64.14 (+) and Y = 81.71 (-). `_leds.txt` has the centres.
-  - **The pad spacing is a placeholder.** Pick the actual through-hole CR2032 holder first, then move the two pads to its pin positions. The cell stays centred behind the box for the balance.
+- **Power is USB-C only, 5 V, no cell.** That keeps the standard NE555 and CD4017 and lets white and blue LEDs work. The USB-C connector needs two 5.1 kΩ CC resistors to the pins. Add a small reverse and ESD part if you like. The CD4017's 5 V outputs through 330 Ω give about 5 to 8 mA per LED, so groups 1 and 2 (two LEDs each) load a pin at 10 to 16 mA: a 74HC4017 is better, or raise the resistors to 470 Ω.
+- **Parts layout.** Everything is SMT on the front, inside the gift box together with the LEDs. There are no through-hole parts and nothing on the back.
+  - The guide layer shows the reserved zones: U2 CD4017 (SOIC-16) and U1 555 (SOIC-8) in the left of the box, a column of 8 passive footprints beside them, 9 more passives right of the ribbon, and J1 USB-C at the bottom edge (9.2 x 7.6 mm, mouth on the board edge, X = 71.20, Y = 81.11). `_leds.txt` has the centres.
+  - **The USB-C footprint is a placeholder.** Use the footprint of the receptacle you pick (a mid-mount or top-mount 16-pin part, about 9 mm wide). The gold ribbon stops above it. Keep the connector's pads at least 0.25 mm from art copper.
   - The parts sit on black mask, so the box shows only the gold ribbon and its white outline. Keep the gold ribbon 0.25 mm or more away from part pads.
 
 ## Import (KiCad 8: PCB Editor > File > Import > Graphics…)
@@ -83,7 +83,7 @@ Use these settings for every file: Placement = At X 0, Y 0; Import scale = 1.0; 
 | 02_F.Cu.svg | F.Cu | Copper under every gold area. It is unconnected, so keep pours and tracks off the front around it. |
 | 03_F.Mask.svg | F.Mask | Filled shapes are mask **openings**, which become the exposed ENIG gold. |
 | 04_F.Silkscreen.svg | F.Silkscreen | White dog, black dog line work, tree edges, present outline, ground line and "No More Silent Nights". |
-| 05_User.Drawings_LED_guide.svg | User.Drawings | The 10 LED positions, the 20 mm cell circle (back side), the front parts zones in the gift box and the 2 holder pads. |
+| 05_User.Drawings_LED_guide.svg | User.Drawings | The 10 LED positions, the front parts zones in the gift box and the USB-C connector position. |
 
 There is no F.Paste art layer, because paste on the art would put solder on the gold.
 
@@ -107,8 +107,8 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 
 **Things to know before ordering:**
 - **Delicate tips.** The tree's branch tips and the star's points are narrower than 2 mm at the very end, as thin as 1.6 mm. They cut fine but can chip in handling. The unsupported star stalk is 4.5 mm wide.
-- **Assembly service.** The LEDs, 555, 4017, resistors and diodes are all on the front, so assembly is **single-sided SMT** (front only), plus a hand-soldered through-hole holder. That avoids the double-sided Standard PCBA requirement; confirm the through-hole step with JLCPCB or solder it yourself. Standard PCBA lists edge rails and fiducials as necessary. Their pages don't say how they handle odd-shaped outlines, so ask JLCPCB support or use their "Panel by JLCPCB" option and look at their panel preview before paying. They recommend 5 mm process edges.
-- **Component to board edge.** JLCPCB publishes no minimum for components other than copper to edge (0.2 mm). The nearest LED pad is D4 at 0.78 mm from the edge (D2 0.80, D6 0.89), and the coin cell area keeps at least 1.9 mm clear for a 20.5 mm circle. Check the footprint of your chosen holder: the present area fits a circle about 24 mm across, so larger holders will not fit.
+- **Assembly service.** Every part is on the front, so assembly is **single-sided SMT**, which avoids the double-sided Standard PCBA requirement. Standard PCBA lists edge rails and fiducials as necessary. Their pages don't say how they handle odd-shaped outlines, so ask JLCPCB support or use their "Panel by JLCPCB" option and look at their panel preview before paying. They recommend 5 mm process edges.
+- **Component to board edge.** JLCPCB publishes no minimum for components other than copper to edge (0.2 mm). The nearest LED pad is D4 at 0.77 mm from the edge (D2 0.83, D6 0.89). The USB-C receptacle sits right at the bottom edge by design, so confirm its overhang with JLCPCB's assembly team. Also check that the connector's shell and pads stay clear of the white outline silkscreen.
 - **Finish.** Mask over bare copper is not an issue on this board. Exposed ENIG areas are all 1:1 mask openings.
 - **Edge.Cuts import.** When you import the outline into KiCad, check that it joins into one closed shape.
 
@@ -116,5 +116,5 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 - Matte **black** mask, **white** silkscreen, **ENIG** finish, 1.6 mm FR4. A different board thickness changes the balance.
 
 ## Files
-- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D8) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does. `preview_stages.png` and `stage_01..10.png` show the 10-stage sequence.
+- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D8) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does. `preview_stages.png` and `stage_01..10.png` show the 10-stage sequence. `preview_parts_zone.png` overlays the parts zones and USB-C position (blue).
 - `source/build_ornament.py` regenerates every layer and prints the balance (Python 3 with shapely and fonttools). It needs the OFL font UnifrakturMaguntia saved as `source/fonts/frak.ttf`.

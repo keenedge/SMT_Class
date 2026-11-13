@@ -1,12 +1,12 @@
 # ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 85 x 85 mm box)
-D1, 54.08, 52.76, 0   # tree group 1 (bottom)
-D2, 59.63, 48.49, 0   # tree group 1 (bottom)
-D3, 50.66, 44.64, 0   # tree group 2
-D4, 56.64, 44.21, 0   # tree group 2
-D5, 54.93, 36.51, 0   # tree group 3
-D6, 53.44, 30.96, 0   # tree group 4
-D7, 53.22, 24.97, 0   # tree group 5 (top)
-D8, 52.79, 11.37, 0   # star
+D1, 50.61, 51.26, 0   # tree group 1 (bottom)
+D2, 54.03, 47.63, 0   # tree group 1 (bottom)
+D3, 47.19, 46.78, 0   # tree group 2
+D4, 53.18, 38.65, 0   # tree group 2
+D5, 49.97, 35.02, 0   # tree group 3
+D6, 48.48, 30.96, 0   # tree group 4
+D7, 48.26, 24.97, 0   # tree group 5 (top)
+D8, 47.83, 11.37, 0   # star
 D9, 61.30, 58.41, 90   # puppy left eye
 D10, 64.72, 58.41, 90   # puppy right eye
 # front SMT zone: U2 CD4017 SOIC-16, centre 62.77, 69.14, extent 6.4 x 10.4 mm
@@ -19,17 +19,14 @@ D10, 64.72, 58.41, 90   # puppy right eye
 # front SMT zone: R/C/D 6, centre 67.97, 72.49, extent 3.1 x 1.0 mm
 # front SMT zone: R/C/D 7, centre 67.97, 74.24, extent 3.1 x 1.0 mm
 # front SMT zone: R/C/D 8, centre 67.97, 75.99, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 9, centre 67.97, 77.74, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 10, centre 67.97, 79.49, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 11, centre 67.97, 81.24, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 12, centre 76.97, 67.54, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 13, centre 76.97, 69.29, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 14, centre 76.97, 71.04, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 15, centre 76.97, 72.79, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 16, centre 76.97, 74.54, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 17, centre 76.97, 76.29, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 18, centre 76.97, 78.04, extent 3.1 x 1.0 mm
-BT1 + through-hole pad (2.2 mm pad, 1.0 mm hole), 76.97, 64.14
-BT1 - through-hole pad (2.2 mm pad, 1.0 mm hole), 76.97, 81.71
-BT1 (CR2032 holder centre, B.Cu), 70.15, 72.64, 0
-# hanging hole 52.79, 3.33; centre of mass with battery 52.85, 64.62
+# front SMT zone: R/C/D 9, centre 77.97, 67.54, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 10, centre 77.97, 69.29, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 11, centre 77.97, 71.04, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 12, centre 77.97, 72.79, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 13, centre 77.97, 74.54, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 14, centre 77.97, 76.29, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 15, centre 77.97, 78.04, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 16, centre 77.97, 79.79, extent 3.1 x 1.0 mm
+# front SMT zone: R/C/D 17, centre 77.97, 81.54, extent 3.1 x 1.0 mm
+J1 USB-C receptacle (SMT, F.Cu), centre 71.20, 81.11, extent 9.2 x 7.6 mm, mouth on the bottom edge
+# hanging hole 47.83, 3.33; centre of mass with battery 47.84, 63.98
