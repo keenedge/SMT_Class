@@ -1,13 +1,13 @@
 # ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 85 x 85 mm box)
-D1, 53.91, 54.26, 0
-D2, 59.70, 48.42, 0
-D3, 51.12, 48.85, 0
-D4, 55.41, 42.41, 0
-D5, 57.77, 37.48, 0
-D6, 50.26, 35.20, 0
-D7, 51.76, 31.47, 0
-D8, 53.26, 27.30, 0
-D9, 52.84, 23.40, 0
-D10, 52.84, 11.16, 0
+D1, 54.98, 49.50, 0   # tree
+D2, 56.48, 40.05, 0   # tree
+D3, 50.69, 34.26, 0   # tree
+D4, 53.26, 25.67, 0   # tree
+D5, 52.84, 11.16, 0   # star
+D6, 25.66, 38.46, 0   # black Lab eye
+D7, 38.25, 43.80, 0   # yellow Lab eye
+D8, 47.98, 69.03, 90   # white dog chest
+D9, 61.38, 58.38, 90   # puppy left eye
+D10, 64.81, 58.38, 90   # puppy right eye
 BT1 (CR2032 holder centre, B.Cu), 70.26, 73.32, 0
 # hanging hole 52.84, 3.09; centre of mass with battery 52.84, 64.85

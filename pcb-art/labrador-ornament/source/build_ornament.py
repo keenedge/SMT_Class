@@ -363,7 +363,7 @@ def _valid(x, y, placed):
         return False
     return all(abs(x - px) > 5.4 / S or abs(y - py) > 3.6 / S for px, py in placed)
 LEDS = []
-for dx, y in [(2.0, 63.8), (8.5, 57.0), (-2.0, 57.5), (3.0, 50.0), (6.0, 44.0), (-3.0, 41.6), (-1.5, 37.0), (0.5, 32.4), (0.0, 27.6)]:
+for dx, y in [(3.5, 58.5), (6.5, 48.5), (-2.5, 40.5), (0.5, 30.5)]:      # four on the tree, bottom to top
     best = None
     for i in range(-16, 17):
         for j in range(-12, 13):
@@ -374,10 +374,21 @@ for dx, y in [(2.0, 63.8), (8.5, 57.0), (-2.0, 57.5), (3.0, 50.0), (6.0, 44.0), 
     if best is None:
         print("LED NO ROOM", dx, y); best = (0, TX + dx, y)
     LEDS.append((round(best[1], 2), round(best[2], 2)))
-LEDS.append(STAR_C)
-led_keep = unary_union([box(x - 2.2 / S, y - 1.0 / S, x + 2.2 / S, y + 1.0 / S) for x, y in LEDS])
-for x, y in LEDS:
-    if not safe_cu.contains(box(x - 1.5 / S, y - 0.75 / S, x + 1.5 / S, y + 0.75 / S)): print("LED OFF BOARD", x, y)
+N_TREE = len(LEDS)
+LEDS.append(STAR_C)                                              # D5: the star
+_pp = lambda p, kw: place(Point(p), **kw).coords[0]
+LEDS.append(_pp((37.4, 45.4), B))                                # D6: black Lab's eye
+LEDS.append(_pp((37.4, 45.4), Y))                                # D7: yellow Lab's eye
+LEDS.append(wl([(7.3, 13.2)])[0])                                # D8: white dog, on its chest like a glowing bell
+LEDS.append((HX - 2.0, HY - 0.3)); LEDS.append((HX + 2.0, HY - 0.3))   # D9, D10: the puppy's eyes
+LED_ROT = [0] * N_TREE + [0, 0, 0, 90, 90, 90]
+LED_NAME = ["tree"] * N_TREE + ["star", "black Lab eye", "yellow Lab eye", "white dog chest", "puppy left eye", "puppy right eye"]
+def _lbox(x, y, rot, hx, hy):
+    return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
+# clear area per LED: generous on the tree, tight on the dogs so the faces survive
+led_keep = unary_union([_lbox(x, y, r, (2.2 if i <= N_TREE else 1.85) / S, (1.0 if i <= N_TREE else 0.9) / S) for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT))])
+for (x, y), r in zip(LEDS, LED_ROT):
+    if not safe_cu.contains(_lbox(x, y, r, 1.5 / S, 0.75 / S)): print("LED OFF BOARD", x, y)
 led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
 
 # ---- YELLOW DOG: gold, with engraved black details and a hatched shadow down its back
@@ -433,7 +444,7 @@ for p in tier_polys:                         # top tier first
     cover = cover.union(p.buffer(0.5))
 tree_silk = unary_union(tl + [tree_lines[-1].difference(cover)])
 # small gold bauble cap above each tree LED
-bauble_gold = unary_union([unary_union([box(x - 0.7, y - 2.55, x + 0.7, y - 1.85), stroke([(x - 0.35, y - 2.55), (x, y - 3.2), (x + 0.35, y - 2.55)], 0.25, smooth=False)]) for x, y in LEDS[:9]])
+bauble_gold = unary_union([unary_union([box(x - 0.7, y - 2.55, x + 0.7, y - 1.85), stroke([(x - 0.35, y - 2.55), (x, y - 3.2), (x + 0.35, y - 2.55)], 0.25, smooth=False)]) for x, y in LEDS[:N_TREE]])
 
 # ---- STAR + eyelet: gold
 star_gold = star(*STAR_C, 6.2, 3.3).difference(circle(*STAR_C, 2.8))
@@ -515,7 +526,7 @@ outline, hole, copper, gold_open, sil_all = fin(outline), fin(hole), fin(copper)
 LEDS = [finp(p) for p in LEDS]
 BAT_C, HOLE_C = finp(BAT_C), finp(HOLE_C)
 cx, cy = finp((cx, cy))
-led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
+led_outline = unary_union([_lbox(x, y, r, 1.0, 0.625).exterior.buffer(0.05) for (x, y), r in zip(LEDS, LED_ROT)])
 bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
 print("FINAL bounds", [round(v, 2) for v in outline.bounds], "hole", [round(v, 2) for v in HOLE_C], "com", round(cx, 2), round(cy, 2))
 # manufacturability at final size: thinnest features
@@ -552,7 +563,7 @@ write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 o
 with open(os.path.join(OUT, "_leds.txt"), "w") as f:
     f.write("# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 85 x 85 mm box)\n")
     for i, (x, y) in enumerate(LEDS):
-        f.write(f"D{i+1}, {x:.2f}, {y:.2f}, 0\n")
+        f.write(f"D{i+1}, {x:.2f}, {y:.2f}, {LED_ROT[i]}   # {LED_NAME[i]}\n")
     f.write(f"BT1 (CR2032 holder centre, B.Cu), {BAT_C[0]:.2f}, {BAT_C[1]:.2f}, 0\n")
     f.write(f"# hanging hole {HOLE_C[0]:.2f}, {HOLE_C[1]:.2f}; centre of mass with battery {cx:.2f}, {cy:.2f}\n")
 
@@ -564,13 +575,16 @@ def colored(g, c):
         out.append(f'<path d="{dd}" fill="{c}" fill-rule="evenodd"/>')
     return "\n".join(out)
 board_d = ring_d(outline.exterior.coords) + " " + ring_d(hole.exterior.coords)
-def led_svg(x, y, on):
+def led_svg(x, y, on, rot=0):
+    return f'<g transform="rotate({rot} {x} {y})">' + _led_svg(x, y, on) + '</g>'
+def _led_svg(x, y, on):
     g = f'<circle cx="{x}" cy="{y}" r="6" fill="url(#ledglow)"/>' if on else ""
+    if on and y > 20: g = g.replace('r="6"', 'r="4"')
     g += f'<rect x="{x-1.45}" y="{y-0.7}" width="0.75" height="1.4" fill="#cfcfcf"/><rect x="{x+0.7}" y="{y-0.7}" width="0.75" height="1.4" fill="#cfcfcf"/>'
     g += f'<rect x="{x-0.7}" y="{y-0.62}" width="1.4" height="1.24" fill="{"#fff6d8" if on else "#e8e2c8"}" stroke="#9a9070" stroke-width="0.08"/>'
     return g
 def preview(lit, name):
-    body = "".join(led_svg(x, y, i in lit) for i, (x, y) in enumerate(LEDS))
+    body = "".join(led_svg(x, y, i in lit, LED_ROT[i]) for i, (x, y) in enumerate(LEDS))
     with open(os.path.join(OUT, name), "w") as f:
         f.write(f'''<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="-2 -2 89 89">
 <defs>
@@ -587,5 +601,6 @@ def preview(lit, name):
 {body}
 </svg>''')
 preview([], "preview.svg")
-preview([9], "preview_lit.svg")
+preview([N_TREE], "preview_lit.svg")
+preview(range(len(LEDS)), "preview_all_lit.svg")
 print("ok", len(no_holes(copper)), len(no_holes(gold_open)), len(no_holes(sil_all)))

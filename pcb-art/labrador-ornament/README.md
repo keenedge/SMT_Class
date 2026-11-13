@@ -32,8 +32,20 @@ These are estimates. Weigh your actual holder: every 1 g of difference in the ba
 
 ## LEDs and power (from smt_tree.kicad_sch)
 The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz, one 0805 LED per output through 330 Ω.
-- **D1 to D9** climb the visible part of the tree, and **D10** is in the centre of the star. `_leds.txt` has every XY position, plus the battery holder centre.
-- Each LED has a 4.4 x 2.0 mm clear area with no silkscreen and no art copper.
+- The ten LEDs are spread over the scene. `_leds.txt` has every XY position and rotation, plus the battery holder centre.
+
+| LED | Where | Rotation |
+|---|---|---|
+| D1 to D4 | Tree baubles, bottom to top | 0° |
+| D5 | Centre of the star | 0° |
+| D6 | Black Lab's eye | 0° |
+| D7 | Yellow Lab's eye | 0° |
+| D8 | White dog's chest, like a glowing bell | 90° |
+| D9, D10 | The puppy's two eyes | 90° |
+
+- The 4017 lights one LED at a time. Wired to Q0..Q9 in this order, the light climbs the tree to the star, visits each dog, then the puppy winks one eye after the other. To make both puppy eyes light together you would have to drive D9 and D10 from one output, which frees one output.
+- Tree and star LEDs have a 4.4 x 2.0 mm clear area. The LEDs on the dogs have a tighter 3.7 x 1.8 mm clear area so the faces survive, which means their vias need to sit close to the pads or in them.
+- The puppy's eyes are only 3.4 mm apart, so D9 and D10 stand upright side by side. 0805 parts fit, but they cover most of the puppy's face. 0603 LEDs on those two positions would look better.
 - **Running from a CR2032 (3 V) needs changes to the schematic.** A standard NE555 needs at least 4.5 V, so swap it for a CMOS 555 such as TLC555 or LMC555 (same SOIC-8 footprint). Blue and white LEDs will be dim or dark at 3 V through 330 Ω, so use red, amber or yellow-green, or lower the resistors. The USB-C connector and its 5k1 resistors are no longer needed.
 - Use a surface-mount holder on B.Cu, so no pins come through the present on the front. The present is 24.5 x 24.5 mm, so pick a compact holder and check its footprint fits. Its pads can extend left onto the ground strip.
 
@@ -54,5 +66,5 @@ There is no F.Paste art layer, because paste on the art would put solder on the 
 - Matte **black** mask, **white** silkscreen, **ENIG** finish, 1.6 mm FR4. A different board thickness changes the balance.
 
 ## Files
-- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D10) on.
+- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D5) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does.
 - `source/build_ornament.py` regenerates every layer and prints the balance (Python 3 with shapely and fonttools). It needs the OFL font UnifrakturMaguntia saved as `source/fonts/frak.ttf`.
