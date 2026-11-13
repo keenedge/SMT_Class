@@ -10,6 +10,7 @@ from fontTools.pens.basePen import BasePen
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else "out"
 FONT = os.path.join(os.path.dirname(__file__), "fonts", "frak.ttf")
+COMIC = os.path.join(os.path.dirname(__file__), "fonts", "comicneue.ttf")
 os.makedirs(OUT, exist_ok=True)
 
 # ---------------------------------------------------------------- helpers
@@ -254,8 +255,9 @@ yjk, yjk_text, ystrap = place(jk_raw, **Y), place(jk_text_raw, **Y), place(strap
 ydog, ydark, ytag = place(dog, **Y), place(dog_dark, **Y), place(tag, **Y)
 
 # ---- tree + star + hanging eyelet
-TX = float(os.environ.get("TX", 56.65))
-STAR_C = (TX, 13.6)
+TX = float(os.environ.get("TX", 58.7))
+STAR_K = float(os.environ.get('STAR_K', 1.25))
+STAR_C = (TX, 13.6 + (STAR_K - 1.0) * 7.0)       # star grows downward; its top stays under the hanging eyelet
 tiers = [(21.0, 35.5, 12.0), (27.5, 49.0, 17.5), (37.5, 63.0, 22.5), (49.5, 77.0, 27.0)]
 tier_polys = []
 for k, (ya, yb, hw) in enumerate(tiers):
@@ -273,7 +275,7 @@ for k, (ya, yb, hw) in enumerate(tiers):
     tier_polys.append(Polygon(pts).buffer(0))
 trunk = box(TX - 3.0, 74.0, TX + 3.0, BASE_Y + 1)
 neck = box(TX - 2.6, STAR_C[1], TX + 2.6, 26.0)
-star_board = star(*STAR_C, 7.0, 3.9)
+star_board = star(*STAR_C, 7.0 * STAR_K, 3.9 * STAR_K)
 HOLE_C, HOLE_R = (TX, 4.2), 1.5 / S   # 3 mm hanging hole at final size
 eye_tab = circle(*HOLE_C, 3.8)
 tree = unary_union(tier_polys + [trunk, neck])
@@ -333,7 +335,7 @@ phead = phead.intersection(box(0, 0, 100, BT + 0.6))
 ppaws = unary_union([box(HX - 4.9, BT - 0.9, HX - 3.1, BT + 1.2).buffer(0.45, join_style=1), box(HX + 3.1, BT - 0.9, HX + 4.9, BT + 1.2).buffer(0.45, join_style=1)])
 present = unary_union([box(PX0, BT, PX1, 99.6), gap, lid, bow, ptail, phead])
 
-raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present])
+raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present, box(PX1 - 1.0, BT, 98.5, 99.6)])   # flat right edge for the USB-C mouth
 # make it routable: inside corners get >= 1 mm radius, and slivers thinner than 1.6 mm are removed
 outline = raw.buffer(1.0 / S, join_style=1).buffer(-1.0 / S, join_style=1)
 outline = outline.buffer(-0.8 / S, join_style=1).buffer(0.8 / S, join_style=1)
@@ -343,7 +345,7 @@ hole = circle(*HOLE_C, HOLE_R)
 board = outline.difference(hole)
 _bx = BAT_C[0]
 _best = max(((board.boundary.distance(Point(_bx, yy)), yy) for yy in [60 + 0.25 * k for k in range(0, 130)] if board.contains(Point(_bx, yy))))
-BAT_C = (_bx + 1.05 / S, 96.0)      # USB-C receptacle at the bottom edge of the gift box (no cell)
+BAT_C = (float(os.environ.get('BATX', 95.9)), 86.1)      # USB-C receptacle at the bottom edge of the gift box (no cell)
 print(f"BATTERY: biggest holder circle at x={_bx:.1f}: diameter {2*_best[0]*S:.1f} mm final, centre y={_best[1]:.1f} design")
 safe_cu = board.buffer(-0.5 / S)                 # copper keep-back from the edge
 safe_silk = board.buffer(-0.35 / S)
@@ -366,53 +368,64 @@ def _valid(x, y, placed):
     if not _ok_zone.contains(pad) or occl.intersects(keep):
         return False
     return all(abs(x - px) > 5.4 / S or abs(y - py) > 3.6 / S for px, py in placed)
-LEDS = []
-for dx, y in [(2.5, 62.0), (10.5, 59.0), (-2.5, 52.5), (8.5, 49.5), (2.5, 43.0), (1.0, 36.5), (0.5, 29.5)]:      # seven on the tree in five groups: 2, 2, 1, 1, 1 from the bottom up
-    best = None
-    for i in range(-32, 33):
-        for j in range(-20, 21):
-            x, yy = TX + dx + i * 0.25, y + j * 0.25
-            dd = (i * 0.25) ** 2 + (j * 0.25) ** 2
-            if (best is None or dd < best[0]) and _valid(x, yy, LEDS):
-                best = (dd, x, yy)
-    if best is None:
-        print("LED NO ROOM", dx, y); best = (0, TX + dx, y)
-    LEDS.append((round(best[1], 2), round(best[2], 2)))
-N_TREE = len(LEDS)
-LEDS.append(STAR_C)                                              # D5: the star
-_pp = lambda p, kw: place(Point(p), **kw).coords[0]
-LEDS.append((HX - 2.0, HY - 0.3)); LEDS.append((HX + 2.0, HY - 0.3))   # D9, D10: the puppy's eyes
-LED_ROT = [0] * N_TREE + [0, 90, 90]
-LED_NAME = ["tree group 1 (bottom)", "tree group 1 (bottom)", "tree group 2", "tree group 2", "tree group 3", "tree group 4", "tree group 5 (top)", "star", "puppy left eye", "puppy right eye"]
-STAGES = [[0, 1], [2, 3], [4], [5], [6], [7], [7], [8, 9], [], [8, 9]]      # which LEDs are lit in each of the 10 stages (4017 outputs Q0..Q9)
-# ---- each LED's series resistor (0805, R3..R10 on the tree and star, R11/R12 for the puppy eyes) goes right next to its LED
+# D1 + D8 = the two star LEDs (side by side), D2..D7 = tree groups 1..5 (D3+D4 = group 2), D9/D10 = puppy eyes
+_sx = 1.7 / S
+def _fits(x, y):
+    lp = box(x - 1.5 / S, y - 0.75 / S, x + 1.5 / S, y + 0.75 / S)
+    rp = _rrect(x, y + 2.4 / S, 0)
+    return _ok_zone.contains(lp) and _ok_zone.contains(box(*rp.bounds)) and not occl.intersects(lp) and not occl.intersects(_rrect(x, y + 2.4 / S, 0, 0.3))
 def _rrect(x, y, rot, grow=0.0):
     hx, hy = (1.45 + grow) / S, (0.7 + grow) / S
     return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
-RPOS = []      # (ref, x, y, rot) in design coordinates
-_rkeeps = []
-_pad_boxes = [box(x - 1.5 / S, y - 0.75 / S, x + 1.5 / S, y + 0.75 / S) if LED_ROT[i] == 0 else box(x - 0.75 / S, y - 1.5 / S, x + 0.75 / S, y + 1.5 / S) for i, (x, y) in enumerate(LEDS)]
-for i in range(8):                          # R3..R10 for D1..D8
-    x0, y0 = LEDS[i]; best = None
-    for rot in (0, 90):
-        for a in range(-40, 41):
-            for b in range(-28, 29):
-                x, y = x0 + a * 0.2 / S, y0 + b * 0.2 / S
-                rr = _rrect(x, y, rot, 0.55)
-                if not _ok_zone.contains(box(*_rrect(x, y, rot, 0.0).bounds)) or occl.intersects(_rrect(x, y, rot, 0.6)): continue
-                if any(rr.intersects(pb.buffer(0.35 / S)) for pb in _pad_boxes) or any(rr.intersects(k) for k in _rkeeps): continue
-                if rr.distance(Point(*STAR_C)) < 0 : continue
-                d = (a * 0.2) ** 2 + (b * 0.2) ** 2 + (0.0 if rot == 0 else 0.5)
-                if best is None or d < best[0]: best = (d, x, y, rot)
-    if best is None: print("R NO ROOM near LED", i + 1); best = (0, x0 + 3.5 / S, y0, 0)
-    RPOS.append((f"R{i+3}", best[1], best[2], best[3])); _rkeeps.append(_rrect(best[1], best[2], best[3], 0.55))
+_best = None
+_offs = [o / 4 for o in range(-24, 41)]
+def _bestx(y):
+    c = [o for o in _offs if _fits(TX + o, y)]
+    return min(c, key=abs) if c else None
+for _d10 in range(95, 60, -1):                  # even vertical spacing between the five groups (design units * 10), largest first
+    for _y10 in range(270, 330, 5):
+        d_, y0_ = _d10 / 10, _y10 / 10
+        rows = [y0_ + d_ * k for k in range(5)]
+        xs = [_bestx(rows[k]) for k in (0, 1, 2, 4)]
+        if None in xs: continue
+        pair = None
+        for _p10 in range(34, 60, 2):
+            for _c10 in range(-40, 61, 5):
+                p_, c_ = _p10 / 10, _c10 / 10
+                if _fits(TX + c_ - p_, rows[3]) and _fits(TX + c_ + p_, rows[3]):
+                    sc_ = abs(c_) - p_ * 0.1
+                    if pair is None or sc_ < pair[0]: pair = (sc_, c_, p_)
+        if pair is None: continue
+        score = (d_, -(sum(abs(x) for x in xs) + pair[0]))
+        if _best is None or score > _best[0]: _best = (score, rows, xs, pair)
+    if _best is not None and _best[0][0] == _d10 / 10: break
+print("TREE LED GRID", _best)
+_rows = _best[1]; _xs = _best[2]; _c, _PAIR = _best[3][1], _best[3][2]
+_star_y = STAR_C[1] - 0.9 / S
+LEDS = [(TX - _sx, _star_y), (TX + _xs[3], _rows[4]), (TX + _c - _PAIR, _rows[3]), (TX + _c + _PAIR, _rows[3]), (TX + _xs[2], _rows[2]), (TX + _xs[1], _rows[1]), (TX + _xs[0], _rows[0]), (TX + _sx, _star_y)]
+N_TREE = len(LEDS)
+HEYE = (HX - 2.0, HY - 0.3), (HX + 2.0, HY - 0.3)
+LEDS.append(HEYE[0]); LEDS.append(HEYE[1])
+LED_ROT = [0] * 8 + [90, 90]
+LED_NAME = ["star left", "tree group 1 (bottom)", "tree group 2", "tree group 2", "tree group 3", "tree group 4", "tree group 5 (top)", "star right", "puppy left eye", "puppy right eye"]
+STAGES = [[1], [2, 3], [4], [5], [6], [0, 7], [0, 7], [8, 9], [], [8, 9]]      # which LEDs are lit in each of the 10 stages (4017 outputs Q0..Q9)
+def _rrect(x, y, rot, grow=0.0):
+    hx, hy = (1.45 + grow) / S, (0.7 + grow) / S
+    return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
+RPOS = []      # (ref, x, y, rot) in design coordinates: every resistor sits directly below its LED, same X
+for i in range(8):                          # R3..R10 belong to D1..D8
+    RPOS.append((f"R{i+3}", LEDS[i][0], LEDS[i][1] + 2.4 / S, 0))
 _eyeY = BT + 3.76 / S
-RPOS.append(("R11", HX - 2.0, _eyeY, 90)); RPOS.append(("R12", HX + 2.0, _eyeY, 90))
-for _r in RPOS[8:]: _rkeeps.append(_rrect(_r[1], _r[2], _r[3], 0.55))
+RPOS.append(("R11", HEYE[0][0], _eyeY, 90)); RPOS.append(("R12", HEYE[1][0], _eyeY, 90))
+_rkeeps = [_rrect(x, y, r, 0.55) for _, x, y, r in RPOS]
+for _i, (_r, _x, _y, _rot) in enumerate(RPOS[:8]):
+    _lp = box(LEDS[_i][0] - 1.5 / S, LEDS[_i][1] - 0.75 / S, LEDS[_i][0] + 1.5 / S, LEDS[_i][1] + 0.75 / S)
+    if not _ok_zone.contains(_lp) or not _ok_zone.contains(box(*_rrect(_x, _y, _rot).bounds)): print("LED/R OFF BOARD", _i + 1, round(LEDS[_i][0], 1), round(LEDS[_i][1], 1))
+    if occl.intersects(_lp) or occl.intersects(_rrect(_x, _y, _rot, 0.3)): print("LED/R IN OCCLUDER", _i + 1)
 def _lbox(x, y, rot, hx, hy):
     return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
 # clear area per LED: generous on the tree, tight on the dogs so the faces survive
-led_keep = unary_union(_rkeeps + [_lbox(x, y, r, (2.2 if i <= N_TREE else 1.75) / S, 1.0 / S) for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT))])
+led_keep = unary_union(_rkeeps + [_lbox(x, y, r, (2.2 if i < 8 else 1.75) / S, 1.0 / S) for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT))])
 for (x, y), r in zip(LEDS, LED_ROT):
     if not safe_cu.contains(_lbox(x, y, r, 1.5 / S, 0.75 / S)): print("LED OFF BOARD", x, y)
 led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
@@ -447,6 +460,10 @@ bsilk = bdark.difference(b_eye.buffer(0.3)).difference(place(ring(37.4, 58.4, 1.
 bsilk = bsilk.difference(place(circle(46.9, 40.7, 2.2), **B))
 _bj = bjk.buffer(-0.3)
 bsilk = bsilk.union(_bj.difference(bjk_text.buffer(0.03)).difference(_bj.buffer(-0.7).difference(_bj.buffer(-1.0)).difference(bjk_text.buffer(0.7)))).union(bstrap.buffer(-0.25))
+_nose = place(smooth_poly([(45.4, 39.6), (47.0, 39.4), (48.3, 40.3), (48.2, 41.9), (46.8, 42.2), (45.6, 41.4)]), **B)
+_nc = _nose.centroid.coords[0]
+_nose_o = affinity.scale(_nose, 0.8, 0.8, origin=_nc)
+bsilk = bsilk.union(_nose_o.difference(affinity.scale(_nose_o, 0.6, 0.6, origin=_nc))).union(circle(_nc[0] - 0.35, _nc[1] - 0.3, 0.2))   # white outline + highlight: the black nose reads clearly
 bsilk = bsilk.union(place(ring(37.4, 45.4, 1.15, 0.25), **B)).union(place(ring(37.4, 58.4, 1.3, 0.25), **B)).difference(gapy)
 
 # ---- TREE: black, white edge lines on every tier, heavier where the top of a tier catches the light
@@ -473,7 +490,7 @@ tree_silk = unary_union(tl + [tree_lines[-1].difference(cover)])
 bauble_gold = unary_union([unary_union([box(x - 0.7, y - 2.55, x + 0.7, y - 1.85), stroke([(x - 0.35, y - 2.55), (x, y - 3.2), (x + 0.35, y - 2.55)], 0.25, smooth=False)]) for x, y in LEDS[:N_TREE]])
 
 # ---- STAR + eyelet: gold
-star_gold = star(*STAR_C, 6.2, 3.3).difference(circle(*STAR_C, 2.8))
+star_gold = star(*STAR_C, 6.2 * STAR_K, 3.3 * STAR_K)      # the LED/resistor clear areas are cut out of it below
 eyelet = circle(*HOLE_C, HOLE_R + 1.30 / S).difference(circle(*HOLE_C, HOLE_R + 0.65 / S))   # gold starts 0.65 mm from the hole
 
 # ---- GROUND: lit snow line, the dogs' shadows, lettering
@@ -489,7 +506,7 @@ snow = box(4.0, gtop + 0.3, PX0 - 3.0, gtop + 0.7)
 CAPTION = "No More Silent Nights"
 _cap = 3.9
 while True:
-    text = text_geom(CAPTION, (1.5 + PX0) / 2 - 0.5, 97.3, _cap).buffer(0.05 / S)   # +0.05 mm per side so Fraktur hairlines stay above 0.15 mm
+    text = text_geom(CAPTION, (1.5 + PX0) / 2 - 0.5, 97.3, _cap, font=COMIC).buffer(0.02 / S)   # +0.05 mm per side so Fraktur hairlines stay above 0.15 mm
     if text.bounds[2] - text.bounds[0] <= PX0 - 1.5 - 7.0 - 0.2: break
     _cap -= 0.1
 print("caption cap height (final mm)", round(_cap * S, 2))
@@ -548,7 +565,7 @@ def fin(g):
 def finp(p):
     return (p[0] * S + _dx, p[1] * S + _dy)
 outline, hole, copper, gold_open, sil_all = fin(outline), fin(hole), fin(copper), fin(gold_open), fin(sil_all)
-sil_all = sil_all.difference(box(64.0, 83.2, 78.4, 86.0))     # no white box line under the USB-C mouth
+sil_all = sil_all.difference(box(77.0, 66.0, 86.0, 81.5))     # no white box line behind the USB-C mouth
 LEDS = [finp(p) for p in LEDS]
 BAT_C, HOLE_C = finp(BAT_C), finp(HOLE_C)
 cx, cy = finp((cx, cy))
@@ -564,18 +581,19 @@ def _rect(cx_, cy_, w_, h_): return box(cx_ - w_ / 2, cy_ - h_ / 2, cx_ + w_ / 2
 PARTS = []   # (ref, kind, cx, cy, w, h, rot)
 PARTS.append(("U2", "ic", 63.1, 72.8, 6.4, 10.4, 0))
 PARTS.append(("U1", "ic", 70.4, 67.8, 6.4, 5.4, 0))
-_slots = [(x, y) for y in (72.6, 74.3, 76.0) for x in (68.8, 72.0, 75.2, 78.4)] + [(x, y) for y in (64.9, 66.6, 68.3, 70.0) for x in (76.0, 79.2)]
+_slots = [(x, y) for y in (72.6, 74.3, 76.0, 77.7) for x in (68.8, 72.0, 75.2)]
 _refs = ["D11", "D12", "D13", "D14", "R1", "R2", "C1", "C2", "R13", "R14"]
 for _r, (_x, _y) in zip(_refs, _slots):
     PARTS.append((_r, "passive", _x, _y, 3.0, 1.5, 0))
-USB_C = (71.2, _by1 - 2.9, 12.1, 8.2)      # J1 origin; mouth toward the bottom edge, PCB-edge line at the board edge
-USB_BOX = (71.2, _by1 - 3.6, 10.0, 7.4)
+_xr = outline.bounds[2]
+USB_C = (_xr - 2.9, _by1 - 5.0 - 6.55, 8.2, 12.1)      # J1 origin: mouth toward the RIGHT edge (rotated 90), 5 mm from the connector's bottom edge to the board bottom
+USB_BOX = (USB_C[0] + 0.3, USB_C[1], 7.4, 10.0)
 for _r, _x, _y, _rot in RPOS:
     _fx, _fy = finp((_x, _y))
     PARTS.append((_r, "passive", _fx, _fy, 3.0 if _rot == 0 else 1.5, 1.5 if _rot == 0 else 3.0, _rot))
 parts_outline = unary_union([_rect(*p[2:6]).exterior.buffer(0.05) for p in PARTS])
 import json
-json.dump({"parts": PARTS, "usb": USB_C}, open(os.path.join(OUT, "parts.json"), "w"))
+json.dump({"parts": PARTS, "usb": USB_C, "usb_rot": 90}, open(os.path.join(OUT, "parts.json"), "w"))
 pad_guide = _rect(*USB_BOX).exterior.buffer(0.05)
 _bare_fx = finp((board.centroid.x, board.centroid.y))[0]
 print(f"FINALX bare={_bare_fx:.2f} battery={BAT_C[0]:.2f} combined={cx:.2f} hole={HOLE_C[0]:.2f} board_g={M_BOARD:.1f} tot_g={M_BOARD+M_BAT:.1f} bat_xy=({BAT_C[0]:.2f},{BAT_C[1]:.2f})")
@@ -616,7 +634,7 @@ with open(os.path.join(OUT, "_leds.txt"), "w") as f:
     for i, (x, y) in enumerate(LEDS):
         f.write(f"D{i+1}, {x:.2f}, {y:.2f}, {LED_ROT[i]}   # {LED_NAME[i]}\n")
     for p in PARTS: f.write(f"# front SMT zone: {p[0]}, centre {p[2]:.2f}, {p[3]:.2f}, extent {p[4]:.1f} x {p[5]:.1f} mm\n")
-    f.write(f"J1 USB-C receptacle (SMT, F.Cu), footprint origin {USB_C[0]:.2f}, {USB_C[1]:.2f}, mouth toward the bottom edge\n")
+    f.write(f"J1 USB-C receptacle (SMT, F.Cu), footprint origin {USB_C[0]:.2f}, {USB_C[1]:.2f}, mouth toward the right edge (rotation 90)\n")
     f.write(f"# hanging hole {HOLE_C[0]:.2f}, {HOLE_C[1]:.2f}; centre of mass with battery {cx:.2f}, {cy:.2f}\n")
 
 MASK, GOLD, GOLD_HI, SILK = "#121214", "#d9b14a", "#f0d27a", "#efeee8"
@@ -653,7 +671,7 @@ def preview(lit, name):
 {body}
 </svg>''')
 preview([], "preview.svg")
-preview([N_TREE], "preview_lit.svg")
+preview([0, 7], "preview_lit.svg")
 preview(range(len(LEDS)), "preview_all_lit.svg")
 for _k, _st in enumerate(STAGES):
     preview(_st, f"stage_{_k+1:02d}.svg")
