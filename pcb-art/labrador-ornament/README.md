@@ -1,6 +1,6 @@
-# "Silent Night" dogs-and-tree ornament: KiCad layer SVGs
+# "No More Silent Nights" dogs-and-tree ornament: KiCad layer SVGs
 
-The board itself is cut to the silhouette of the scene: a black Labrador and a yellow Labrador look up at a Christmas tree with a star on top. A small white dog with an antler tied to its head sits in front of them, and a wrapped present with a big bow sits bottom right, with a puppy's tail poking out from under the lid. A ground strip ties everything into one board.
+The board itself is cut to the silhouette of the scene: a black Labrador and a yellow Labrador look up at a Christmas tree with a star on top. A small white dog with an antler tied to its head sits in front of them, and a wrapped present with a big bow sits bottom right, with a puppy peeking over the lid and its tail poking out the other side. A ground strip ties everything into one board.
 
 The board fits inside an **85 x 85 mm** square (83.3 mm wide, 85.0 mm tall). Every SVG uses the origin at the top-left corner of that square, drawn at 1 SVG unit = 1 mm. Text has already been turned into outlines, and shapes with holes are split into hole-free pieces.
 
@@ -10,7 +10,7 @@ The board fits inside an **85 x 85 mm** square (83.3 mm wide, 85.0 mm tall). Eve
 - **Black dog:** plain black mask with white silkscreen line work, a thin gold rim on the edges facing the star, and a gold eye and tag.
 - **Guide dog jackets:** both Labs wear a training jacket lettered "BCAGD" (BC & Alberta Guide Dogs), with the letters following the curve of the dog's back. The black dog's jacket is solid white silkscreen with the letters left black. The yellow dog's jacket is black mask with a white outline and white letters. The letters are about 2.6 mm tall on the black dog and 2.2 mm on the yellow dog. To change the word, set `JK_WORD` when running the build script.
 - **White dog:** solid white silkscreen with black details and a gold bell.
-- **Present:** gold ribbon and bow, white box outline. The puppy tail is black mask with a white outline and stripes.
+- **Present:** gold ribbon and bow, white box outline. The puppy's head, paws and tail are gold with dark engraved details.
 - **Tree:** black mask with white edge lines. The dogs and the present sit in front of it. The star, the hanging eyelet and the present's ribbon are gold.
 
 ## Balance
@@ -20,9 +20,9 @@ The 3 mm hanging hole is above the star at X = 52.97 mm. The CR2032 holder goes 
 |---|---|---|
 | Bare board (1.6 mm FR4, 33 cm²) | 9.9 g | 45.0 mm |
 | CR2032 cell + SMD holder | 4.5 g (3.0 g + 1.5 g) | 70.6 mm |
-| **Combined** | 14.4 g | **53.00 mm** |
+| **Combined** | 14.4 g | **53.04 mm** |
 
-With those numbers the centre of mass is 0.03 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
+With those numbers the centre of mass is 0.06 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
 
 These are estimates. Weigh your actual holder: every 1 g of difference in the battery assembly moves the balance point about 1.25 mm (about 1.2°). To trim, slide the holder: moving it 1 mm sideways moves the balance point about 0.3 mm. The ICs and passives weigh under 1 g in total. Placing them near X = 53 on the back keeps them out of the balance.
 
@@ -45,7 +45,7 @@ Use these settings for every file: Placement = At X 0, Y 0; Import scale = 1.0; 
 | 01_Edge.Cuts.svg | Edge.Cuts | The board silhouette plus the hanging hole. |
 | 02_F.Cu.svg | F.Cu | Copper under every gold area. It is unconnected, so keep pours and tracks off the front around it. |
 | 03_F.Mask.svg | F.Mask | Filled shapes are mask **openings**, which become the exposed ENIG gold. |
-| 04_F.Silkscreen.svg | F.Silkscreen | White dog, black dog line work, tree edges, present outline, ground line and "Silent Night". |
+| 04_F.Silkscreen.svg | F.Silkscreen | White dog, black dog line work, tree edges, present outline, ground line and "No More Silent Nights". |
 | 05_User.Drawings_LED_guide.svg | User.Drawings | The 10 LED positions and the 20 mm coin cell circle. |
 
 There is no F.Paste art layer, because paste on the art would put solder on the gold.

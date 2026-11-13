@@ -307,16 +307,24 @@ wdark = unary_union([
 # ---- wrapped present, bottom right: the CR2032 holder sits behind it on the back as the counterweight
 PX0, PX1, PY0 = 68.5, 97.0, 71.0      # 24.5 x 24.5 mm at final size, room for an SMD CR2032 holder
 BAT_C = ((PX0 + PX1) / 2, 86.0)
-BX, KY = BAT_C[0] - 3.4, PY0 - 4.6          # bow knot
-def _loop(sg, k=0.9):
+BX, KY = 84.4, PY0 - 4.6          # bow knot
+def _loop(sg, k=0.8):
     return smooth_poly([(BX + sg * k * x, KY + k * y) for x, y in [(0.6, 0.2), (3.2, -4.4), (7.6, -5.0), (9.4, -2.2), (8.4, 1.0), (4.0, 1.2)]])
 bow_loops = unary_union([_loop(1), _loop(-1)])
 bow_knot = box(BX - 1.5, KY - 1.6, BX + 1.5, KY + 1.8).buffer(0.6, join_style=1)
 bow = unary_union([bow_loops, bow_knot])
 # puppy tail poking out from under the lid, mid-wag
-_tp = catmull([(93.4, PY0 - 2.0), (92.6, PY0 - 6.5), (93.2, PY0 - 11.0), (95.4, PY0 - 14.6), (96.6, PY0 - 16.6)], closed=False, n=8)
-ptail = unary_union([Point(p).buffer(2.3 - 1.0 * i / (len(_tp) - 1)) for i, p in enumerate(_tp)])
-present = unary_union([box(PX0, PY0, PX1, 99.6), box(PX0 - 1.5, PY0 - 3.2, PX1 + 1.5, PY0 + 0.8), bow, ptail])
+_tp = catmull([(94.6, PY0 - 2.0), (93.8, PY0 - 6.5), (94.2, PY0 - 11.0), (95.8, PY0 - 14.6), (96.6, PY0 - 16.6)], closed=False, n=8)
+ptail = unary_union([Point(p).buffer(2.1 - 0.9 * i / (len(_tp) - 1)) for i, p in enumerate(_tp)])
+# puppy peeking over the lid on the left: top of the head, floppy ears, two paws hooked over the edge
+HX, LID_T = 72.4, PY0 - 3.2
+HY = LID_T - 2.4
+phead = unary_union([circle(HX, HY, 5.0),
+                     smooth_poly([(HX - 3.0, HY - 4.2), (HX - 5.8, HY - 3.4), (HX - 6.6, HY + 0.6), (HX - 5.4, HY + 2.6), (HX - 3.8, HY + 0.4)]),
+                     smooth_poly([(HX + 3.0, HY - 4.2), (HX + 5.8, HY - 3.4), (HX + 6.6, HY + 0.6), (HX + 5.4, HY + 2.6), (HX + 3.8, HY + 0.4)])])
+phead = phead.intersection(box(0, 0, 100, LID_T + 0.6))
+ppaws = unary_union([box(HX - 4.9, LID_T - 0.7, HX - 3.1, LID_T + 1.0).buffer(0.45, join_style=1), box(HX + 3.1, LID_T - 0.7, HX + 4.9, LID_T + 1.0).buffer(0.45, join_style=1)])
+present = unary_union([box(PX0, PY0, PX1, 99.6), box(PX0 - 1.5, PY0 - 3.2, PX1 + 1.5, PY0 + 0.8), bow, ptail, phead])
 
 raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present])
 # make it routable: inside corners get >= 1 mm radius, and slivers thinner than 1.6 mm are removed
@@ -348,7 +356,7 @@ def _valid(x, y, placed):
         return False
     return all(abs(x - px) > 5.4 / S or abs(y - py) > 3.6 / S for px, py in placed)
 LEDS = []
-for dx, y in [(5.0, 66.0), (8.5, 57.0), (-2.0, 57.5), (3.0, 50.0), (6.0, 44.0), (-3.0, 41.6), (-1.5, 37.0), (0.5, 32.4), (0.0, 27.6)]:
+for dx, y in [(2.0, 63.8), (8.5, 57.0), (-2.0, 57.5), (3.0, 50.0), (6.0, 44.0), (-3.0, 41.6), (-1.5, 37.0), (0.5, 32.4), (0.0, 27.6)]:
     best = None
     for i in range(-16, 17):
         for j in range(-12, 13):
@@ -434,31 +442,51 @@ shadows = unary_union([
 ])
 snow = box(4.0, gtop + 0.3, 96.0, gtop + 0.7)
 snow = box(4.0, gtop + 0.3, PX0 - 3.0, gtop + 0.7)
-text = text_geom("Silent Night", (1.5 + PX0) / 2, 97.4, 3.9)
+CAPTION = "No More Silent Nights"
+_cap = 3.9
+while True:
+    text = text_geom(CAPTION, (1.5 + PX0) / 2 - 0.5, 97.3, _cap)
+    if text.bounds[2] - text.bounds[0] <= PX0 - 1.5 - 7.0: break
+    _cap -= 0.1
+print("caption cap height (final mm)", round(_cap * S, 2))
 # white dog: solid white silk with black engraved details, gold bell on the collar
 wsilk = wdog.intersection(safe_silk).difference(wdark)
 wbell = circle(*wl([(8.6, 10.6)])[0], 0.6)
 # present: gold ribbon + bow, white outline
 pbox = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(safe_cu)
 # bow: gold loops with dark centres so they read as loops, a knot, and two ribbon ends draped over the box
-_holes = unary_union([affinity.scale(_loop(sg), 0.42, 0.42, origin=(BX + sg * 4.9, KY - 1.7)) for sg in (1, -1)])
+_holes = unary_union([affinity.scale(_loop(sg), 0.42, 0.42, origin=(BX + sg * 4.35, KY - 1.5)) for sg in (1, -1)])
 _ends = unary_union([Polygon([(BX - 1.2, KY + 1.4), (BX + 0.6, KY + 1.4), (BX - 4.4, PY0 + 9.4), (BX - 5.6, PY0 + 7.6), (BX - 7.4, PY0 + 8.6)]),
                      Polygon([(BX + 1.2, KY + 1.4), (BX - 0.6, KY + 1.4), (BX + 4.4, PY0 + 9.4), (BX + 5.6, PY0 + 7.6), (BX + 7.4, PY0 + 8.6)])])
 _knotline = bow_knot.buffer(0.35).difference(bow_knot.buffer(-0.05))
 bow_gold = unary_union([bow_loops.difference(_holes), _ends]).difference(_knotline).union(bow_knot.buffer(-0.05))
 lid_band = box(PX0 - 1.5, PY0 - 2.4, PX1 + 1.5, PY0)
 vband = box(BX - 1.5, PY0 + 0.8, BX + 1.5, 99.6)
-ribbon = unary_union([vband.difference(_ends.buffer(0.35)), lid_band.difference(bow.buffer(0.35)).difference(_ends.buffer(0.35)), bow_gold,
+ribbon = unary_union([vband.difference(_ends.buffer(0.35)), lid_band.difference(bow.buffer(0.35)).difference(_ends.buffer(0.35)).difference(ppaws.buffer(0.45)), bow_gold,
                       ]).intersection(safe_cu)
 pin = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(board).buffer(-0.8)
 psilk = pin.difference(pin.buffer(-0.35)).difference(ribbon.buffer(0.3))
 _pt = ptail.intersection(board).buffer(-0.55).difference(box(0, PY0 - 3.2 - 0.2, 100, 100))
 _ticks = unary_union([stroke([(_tp[i][0] - 0.9, _tp[i][1] + 0.5), (_tp[i][0] + 0.5, _tp[i][1] - 0.5)], 0.3, smooth=False) for i in range(6, len(_tp) - 5, 5)])
-psilk = unary_union([psilk, _pt.difference(_pt.buffer(-0.38)), _ticks.intersection(_pt)])
+
+# yellow Lab puppy: gold head, ears and paws with dark engraved features
+_pdark = unary_union([
+    circle(HX - 1.8, HY - 0.6, 0.62), circle(HX + 1.8, HY - 0.6, 0.62),                                # eyes
+    stroke([(HX - 2.7, HY - 1.9), (HX - 1.3, HY - 2.2)], 0.28, smooth=False), stroke([(HX + 2.7, HY - 1.9), (HX + 1.3, HY - 2.2)], 0.28, smooth=False),
+    smooth_poly([(HX - 1.2, HY + 0.9), (HX + 1.2, HY + 0.9), (HX + 0.8, HY + 1.9), (HX, HY + 2.2), (HX - 0.8, HY + 1.9)]),   # nose
+    stroke([(HX - 3.3, HY - 3.8), (HX - 4.2, HY - 1.4), (HX - 3.9, HY + 1.2)], 0.38),                     # ear edges
+    stroke([(HX + 3.3, HY - 3.8), (HX + 4.2, HY - 1.4), (HX + 3.9, HY + 1.2)], 0.38),
+])
+_toes = unary_union([stroke([(HX + sx + dx, LID_T + 0.1), (HX + sx + dx, LID_T + 1.5)], 0.25, smooth=False) for sx in (-4.0, 4.0) for dx in (-0.4, 0.4)])
+puppy_gold = unary_union([phead.difference(box(0, LID_T - 0.3, 100, 100)).difference(ppaws.buffer(0.4)).difference(_pdark),
+                          ppaws.difference(_toes),
+                          ptail.difference(box(0, LID_T - 0.3, 100, 100)).difference(_ticks.buffer(0.05))])
+peye_gold = unary_union([circle(HX - 1.6, HY - 0.8, 0.2), circle(HX + 2.0, HY - 0.8, 0.2)])
+
 bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
 
 # ================================================================ assemble
-gold_open = unary_union([ygold, bgold.difference(gapw), star_gold, eyelet, bauble_gold, ribbon, wbell]).intersection(safe_cu).difference(led_keep)
+gold_open = unary_union([ygold, bgold.difference(gapw), star_gold, eyelet, bauble_gold, ribbon, wbell, puppy_gold.intersection(safe_cu).difference(bow.buffer(0.55)), peye_gold]).intersection(safe_cu).difference(led_keep)
 gold_open = gold_open.buffer(-0.07).buffer(0.07)
 copper = gold_open.buffer(0.15).intersection(board.buffer(-0.4)).difference(led_keep.buffer(-0.1))
 # the yellow dog is one solid copper shape (details are mask over copper)
@@ -512,7 +540,7 @@ write("01_Edge.Cuts.svg", "Edge.Cuts: board outline = silhouette of two dogs + t
       "\n".join(f'<path d="{d_}" fill="none" stroke="#000" stroke-width="0.1"/>' for d_ in edge_lines))
 write("02_F.Cu.svg", "F.Cu: copper under the gold art (ENIG). Filled shapes = copper", fill_paths(copper))
 write("03_F.Mask.svg", "F.Mask: filled shapes = solder mask OPENINGS = exposed ENIG gold", fill_paths(gold_open))
-write("04_F.Silkscreen.svg", "F.Silkscreen: black dog line work, tree edges, snow line and Silent Night text (white legend, clear of the 10 LEDs)", fill_paths(sil_all))
+write("04_F.Silkscreen.svg", "F.Silkscreen: black dog line work, tree edges, snow line and caption (white legend, clear of the 10 LEDs)", fill_paths(sil_all))
 write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 outlines, F.Cu) and the CR2032 cell position (20 mm circle, holder goes on B.Cu)",
       fill_paths(bat_guide.union(led_outline).union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
 with open(os.path.join(OUT, "_leds.txt"), "w") as f:
