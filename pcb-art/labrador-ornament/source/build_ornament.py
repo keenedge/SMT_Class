@@ -145,7 +145,7 @@ cap_pts = [(41.5, 13.5), (41.5, 9.0), (43.0, 6.2), (46.0, 3.6), (50.0, 0.6), (54
 cap = Polygon(cap_pts).buffer(0.8, join_style=1).buffer(-0.8, join_style=1)
 cap = cap.union(box(41.5, 9.0, 58.5, 13.5))
 outline = unary_union([body, cap]).buffer(-1.0, join_style=1).buffer(1.0, join_style=1)  # fillet the junction
-outline = unary_union([outline, body])
+outline = unary_union([outline, body]).difference(box(0, 99.4, 100, 101))
 HOLE_C, HOLE_R = (50.0, 7.2), 1.75  # 3.5 mm hanging hole
 hole = circle(*HOLE_C, HOLE_R)
 
@@ -200,120 +200,158 @@ def place(g):
     g = affinity.scale(g, 0.82, 0.82, origin=(45.0, 89.8))
     return affinity.translate(g, 3.0, -6.6)
 dog, dog_gold, tag = place(dog), place(dog_gold), place(tag)
+dog_dark = place(dog_dark)
+dog_tag = tag
 
-# star on top of the tree
-STAR_C = (64.0, 21.0)
-tree_star = star(*STAR_C, 5.2, 2.2)
-tree_star = tree_star.buffer(0.25, join_style=2).buffer(-0.25, join_style=1)
-star_core = star(*STAR_C, 2.0, 0.9)  # dark inner star -> gothic outlined look
-star_gold = tree_star.difference(star_core.buffer(0.0))
+# ================================================================ NOIR SCENE
+# One light source: the star on the tree. Everything else is silhouette and hard shadow.
+RI = 42.2                     # inner frame radius
+inner = circle(CX, CY, RI - 0.9)
+STAR_C = (64.0, 20.6)
+GROUND_Y = 83.2
 
-# cap finial in gold, with a dark gothic trefoil
-cap_gold = cap.intersection(outline).buffer(-0.7)
-cap_gold = cap_gold.difference(circle(*HOLE_C, HOLE_R + 0.9))
-cap_gold = cap_gold.difference(box(0, 12.2, 100, 100))
-cap_dark = unary_union([ring(*HOLE_C, HOLE_R + 1.6, 0.35)])
-cap_gold = cap_gold.difference(cap_dark)
+# ---- star (gold) with a gold halo ring
+tree_star = star(*STAR_C, 6.2, 3.3).buffer(0.2, join_style=2).buffer(-0.2, join_style=1)
+star_gold = tree_star
+# lens-flare cross: four long needle glints
+for ang, L in [(0, 12.0), (90, 7.4), (180, 12.0), (270, 5.4), (45, 3.6), (135, 3.6), (225, 3.6), (315, 3.6)]:
+    t = math.radians(ang)
+    tip = (STAR_C[0] + L * math.cos(t), STAR_C[1] + L * math.sin(t))
+    nx, ny = -math.sin(t) * 0.35, math.cos(t) * 0.35
+    star_gold = star_gold.union(Polygon([(STAR_C[0] + nx, STAR_C[1] + ny), tip, (STAR_C[0] - nx, STAR_C[1] - ny)]))
+star_gold = star_gold.intersection(circle(CX, CY, RI - 1.6)).difference(circle(*STAR_C, 2.8))
 
-# ---------------------------------------------------------------- tree (silkscreen) + gold baubles
+# ---- tree: black silhouette, outlined in silk, rim-lit from the star above
 TX = 64.0
-tiers = [  # (apex y, base y, half width at base)
-    (25.0, 37.5, 7.0),
-    (30.5, 48.5, 10.5),
-    (39.0, 60.5, 14.0),
-    (48.5, 73.5, 17.5),
-]
-tree = []
-garl = []
+tiers = [(24.6, 37.5, 7.0), (30.0, 48.5, 10.5), (38.5, 60.5, 14.0), (48.0, 73.5, 17.5)]
+tier_polys = []
 for k, (ya, yb, hw) in enumerate(tiers):
-    n = 4 + k  # spikes along the hem
-    pts = [(TX, ya), (TX + hw * 0.22, ya + (yb - ya) * 0.40), (TX + hw * 0.50, ya + (yb - ya) * 0.75), (TX + hw * 0.80, ya + (yb - ya) * 0.96), (TX + hw * 1.08, yb + 3.2)]
+    n = 4 + k
+    pts = [(TX, ya), (TX + hw * 0.22, ya + (yb - ya) * 0.40), (TX + hw * 0.50, ya + (yb - ya) * 0.75),
+           (TX + hw * 0.80, ya + (yb - ya) * 0.96), (TX + hw * 1.10, yb + 3.4)]
     for i in range(n, 0, -1):
         xr = TX - hw + 2 * hw * i / n
         xl = TX - hw + 2 * hw * (i - 1) / n
         xm = (xr + xl) / 2
         drop = lambda x: yb + 3.0 * ((x - TX) / hw) ** 2 - 0.6
-        pts += [(xm, drop(xm) - 2.4), (xl, drop(xl) + 0.6)]
-    pts[-1] = (TX - hw * 1.08, yb + 3.2)
+        pts += [(xm, drop(xm) - 2.6), (xl, drop(xl) + 0.8)]
+    pts[-1] = (TX - hw * 1.10, yb + 3.4)
     pts += [(TX - hw * 0.80, ya + (yb - ya) * 0.96), (TX - hw * 0.50, ya + (yb - ya) * 0.75), (TX - hw * 0.22, ya + (yb - ya) * 0.40)]
-    tree.append(Polygon(pts).buffer(0))
-    # sagging garland swag across the tier (dark line)
-    yg = ya + (yb - ya) * 0.66
-    xg = hw * 0.62
-    garl.append(stroke([(TX - xg - 1.5, yg - 2.2), (TX - xg * 0.3, yg + 0.9), (TX + xg * 0.5, yg + 0.2), (TX + xg + 1.5, yg - 2.6)], 0.45))
-tree_body = unary_union(tree)
-trunk = box(TX - 2.2, 73.0, TX + 2.2, 82.5)
-tree_sil = unary_union([tree_body, trunk]).difference(unary_union(garl))
+    tier_polys.append(Polygon(pts).buffer(0))
+trunk = box(TX - 2.0, 72.0, TX + 2.0, GROUND_Y + 0.4)
+tree = unary_union(tier_polys + [trunk])
+# silk outline of the whole silhouette, plus a heavier rim where each tier's top catches the star light
+tree_edge = tree.buffer(0.2).difference(tree.buffer(-0.2))
+tree_rim = []
+for p in tier_polys:
+    lit = p.difference(affinity.translate(p, 0, 1.1))  # top-facing edges only
+    tree_rim.append(lit)
+tree_rim = unary_union(tree_rim).intersection(tree)
+# a couple of baubles that catch the light: gold crescents (lit from above), the rest of the ball is in shadow
+# ---- 10 LEDs (0805, top side): D1-D9 climb the tree as baubles, D10 sits in the heart of the star.
+# The 4017 lights them one at a time, so the light climbs the tree and ends on the star.
+LEDS = [(56.8, 68.6), (71.2, 68.6), (64.0, 64.4), (59.4, 57.4), (68.6, 57.4), (64.0, 51.4),
+        (61.0, 44.6), (67.0, 44.6), (64.0, 34.2), STAR_C]
+led_keep = unary_union([box(x - 2.4, y - 1.1, x + 2.4, y + 1.1) for x, y in LEDS])  # pads + via room: no silk / art copper inside
+# a small gold hanger cap above each tree LED, so every LED reads as a bauble
+bauble_gold = unary_union([unary_union([box(x - 0.7, y - 2.55, x + 0.7, y - 1.85), stroke([(x - 0.35, y - 2.55), (x, y - 3.2), (x + 0.35, y - 2.55)], 0.25, smooth=False)]) for x, y in LEDS[:9]])
+bauble_cut = bauble_gold.buffer(0.4)
+led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
 
-baubles = [(61.6, 34.8, 0.9), (67.4, 32.0, 0.75), (58.0, 44.6, 1.1), (69.0, 46.6, 1.1),
-           (55.0, 56.0, 1.25), (64.6, 57.6, 1.05), (73.0, 55.0, 1.2), (51.6, 69.2, 1.35), (61.6, 70.6, 1.2),
-           (71.8, 68.8, 1.25), (66.6, 41.0, 0.7)]
-bauble_gold = unary_union([circle(x, y, r) for x, y, r in baubles])
-
-# ---------------------------------------------------------------- night sky, rays, frame, snow (silkscreen)
-sil = []
-RI = 41.6  # inner frame radius
-sil.append(ring(CX, CY, RI, 0.7))
-sil.append(ring(CX, CY, RI - 1.3, 0.25))
-# gothic pointed-arch tracery: small lancet arches around the frame
-for i in range(36):
-    a = math.radians(i * 10)
-    x, y = CX + (RI - 0.65) * math.cos(a), CY + (RI - 0.65) * math.sin(a)
-    sil.append(circle(x, y, 0.45))
-# rays of light from the star (long / short alternating)
-rays = []
-for i in range(28):
-    ang = math.radians(i * 360 / 28 + 6)
-    L = 13.0 if i % 2 == 0 else 8.0
-    r0 = 7.4
-    p0 = (STAR_C[0] + r0 * math.cos(ang), STAR_C[1] + r0 * math.sin(ang))
-    p1 = (STAR_C[0] + (r0 + L) * math.cos(ang), STAR_C[1] + (r0 + L) * math.sin(ang))
-    w0 = 0.55 if i % 2 == 0 else 0.4
-    # tapered ray
-    nx, ny = -math.sin(ang), math.cos(ang)
-    rays.append(Polygon([(p0[0] + nx * w0 / 2, p0[1] + ny * w0 / 2), (p1[0] + nx * 0.1, p1[1] + ny * 0.1), (p1[0] - nx * 0.1, p1[1] - ny * 0.1), (p0[0] - nx * w0 / 2, p0[1] - ny * w0 / 2)]))
-rays = unary_union(rays).intersection(circle(CX, CY, RI - 2.4))
-sil.append(ring(*STAR_C, 6.6, 0.3))
-# twinkles + falling snow
-for (x, y, r) in [(22, 30, 1.6), (33, 22, 1.1), (16, 46, 0.9), (84, 36, 1.3), (80, 52, 0.8), (44, 28, 0.8), (27, 38, 0.7), (85, 66, 0.9)]:
-    sil.append(sparkle(x, y, r))
+# ---- light beams: hard-edged shafts falling from the star down-left onto the dog
+beams = []
+a0, a1 = 104.0, 166.0
+a = a0
+widths = [3.0, 1.0, 4.2, 0.7, 3.6, 1.4, 5.0, 0.8, 3.4, 1.2, 4.4, 0.9, 3.0, 1.6]
+gaps = [0.9, 1.4, 0.7, 1.6, 0.8, 1.2, 0.7, 1.5, 0.9, 1.1, 0.8, 1.4, 1.0]
+i = 0
+while a < a1 and i < len(widths):
+    w = widths[i]
+    r0, r1 = 7.5, 90.0
+    t0, t1 = math.radians(a), math.radians(a + w)
+    S = STAR_C
+    beams.append(Polygon([(S[0] + r0 * math.cos(t0), S[1] + r0 * math.sin(t0)), (S[0] + r1 * math.cos(t0), S[1] + r1 * math.sin(t0)),
+                          (S[0] + r1 * math.cos(t1), S[1] + r1 * math.sin(t1)), (S[0] + r0 * math.cos(t1), S[1] + r0 * math.sin(t1))]))
+    a += w + (gaps[i] if i < len(gaps) else 2)
+    i += 1
+beams = unary_union(beams).intersection(inner).intersection(box(0, 0, 100, GROUND_Y))
+# fade: beams start thin near the star (taper by clipping with a circle-grown cone)
+beams = beams.difference(circle(*STAR_C, 7.5))
+# dust / snow motes in the light: knocked-out specks inside the beams only
 import random
 random.seed(1225)
-flakes = []
-while len(flakes) < 70:
-    x, y = random.uniform(9, 91), random.uniform(18, 84)
-    if Point(x, y).distance(Point(CX, CY)) > RI - 3 or Point(x, y).distance(Point(*STAR_C)) < 7.5:
-        continue
-    flakes.append(circle(x, y, random.choice([0.2, 0.25, 0.32])))
-sky = unary_union(flakes)
-# moon: thin crescent, upper left
-moon = circle(27.0, 30.0, 4.6).difference(circle(29.2, 28.6, 4.1))
-sil.append(moon)
-rays = rays.difference(moon.convex_hull.buffer(1.5))
+motes = []
+for _ in range(140):
+    x, y = random.uniform(8, 60), random.uniform(28, GROUND_Y)
+    motes.append(circle(x, y, random.choice([0.18, 0.22, 0.28])))
+beams = beams.difference(unary_union(motes))
 
-# snow drift ground, with knock-out Fraktur text
-ground_top = catmull([(4, 82.0), (14, 83.6), (28, 83.6), (44, 83.4), (58, 82.0), (72, 82.2), (86, 80.6), (96, 79.6)], closed=False)
-snow = Polygon(ground_top + [(96, 100), (4, 100)]).intersection(circle(CX, CY, RI - 0.35))
-text = text_geom("Silent Night", CX, 91.6, 4.4)
-snow = snow.difference(text.buffer(0.15))
-# long noir shadow of the dog, thrown down-left by the star's light
-shadow = Polygon(catmull([(41.0, 83.6), (30.0, 84.2), (20.0, 85.0), (12.0, 85.2), (18.0, 85.9), (30.0, 85.7), (40.0, 85.2)])).buffer(0)
-snow = snow.difference(shadow)
+# ---- ground: black, except a pool of light on the snow where the beams land
+pool = Polygon(catmull([(6, GROUND_Y + 0.2), (20, GROUND_Y - 0.4), (36, GROUND_Y - 0.6), (52, GROUND_Y + 0.2), (46, GROUND_Y + 3.6), (24, GROUND_Y + 4.4), (10, GROUND_Y + 3.0)])).buffer(0)
+pool = pool.union(box(6, GROUND_Y - 0.2, 52, GROUND_Y + 0.6))
+horizon = stroke([(9, GROUND_Y + 0.1), (30, GROUND_Y - 0.5), (52, GROUND_Y + 0.1), (72, GROUND_Y - 0.3), (92, GROUND_Y + 0.2)], 0.35)
+lit_ground = unary_union([pool, beams.buffer(0)]).intersection(inner)
+# the dog's long shadow, thrown away from the star across the lit snow
+dog_base_l, dog_base_r = (16.0, GROUND_Y), (40.6, GROUND_Y)
+shadow = Polygon([(18.0, GROUND_Y - 0.2), (41.0, GROUND_Y - 0.2), (30.0, GROUND_Y + 6.0), (4.0, GROUND_Y + 6.0)])
+tree_shadow = Polygon([(TX - 2.4, GROUND_Y - 0.2), (TX + 2.4, GROUND_Y - 0.2), (TX - 4.0, GROUND_Y + 6), (TX - 12, GROUND_Y + 6)])
 
-sil_all = unary_union(sil + [tree_sil, rays, sky, snow])
+# ---- dog: black silhouette against the beams, gold rim light on the star-facing edges
+dvec = (-0.58, 0.81)  # direction from the star toward the dog (light travel)
+rim = dog.difference(affinity.translate(dog, dvec[0] * 3.4, dvec[1] * 3.4))
+# engraved half-tone: hatched band falling off into shadow
+band = dog.intersection(affinity.translate(dog, dvec[0] * 3.4, dvec[1] * 3.4)).difference(affinity.translate(dog, dvec[0] * 6.0, dvec[1] * 6.0))
+hatch = []
+for k in range(-120, 120):
+    c = k * 0.95
+    # lines perpendicular-ish to the light: run along (dvec rotated 90deg)
+    px, py = -dvec[1], dvec[0]
+    o = (30 + c * dvec[0], 60 + c * dvec[1])
+    w = 0.42
+    hatch.append(LineString([(o[0] - px * 80, o[1] - py * 80), (o[0] + px * 80, o[1] + py * 80)]).buffer(w / 2, cap_style=2))
+hatch = unary_union(hatch)
+head_zone = dog.intersection(Polygon([(33.0, 36.0), (52.0, 36.0), (52.0, 53.4), (33.0, 55.6)]))
+face = head_zone.difference(affinity.translate(dog, dvec[0] * 7.0, dvec[1] * 7.0))
+dog_lit = unary_union([rim, face, band.intersection(hatch)])
+# only keep features facing the light (drop slivers along the bottom) and cut the dark details through the lit areas
+dog_lit = dog_lit.intersection(box(0, 0, 100, GROUND_Y - 0.6)).difference(dog_dark)
+eye_glint = circle(*affinity.translate(affinity.scale(Point(37.6, 45.0), 0.82, 0.82, origin=(45.0, 89.8)), 3.0, -6.6).coords[0], 0.32)
+tag_glint = dog_tag.difference(affinity.translate(dog_tag, dvec[0] * 0.8, dvec[1] * 0.8))
+dog_gold = unary_union([dog_lit, eye_glint, tag_glint]).buffer(-0.08).buffer(0.08)
 
-# ---------------------------------------------------------------- assemble layers
-gold_open = unary_union([dog_gold, star_gold, bauble_gold, cap_gold])  # mask openings (what you see as gold)
-copper = unary_union([dog.buffer(0.15), tree_star.buffer(0.15), bauble_gold.buffer(0.15), cap_gold.buffer(0.15), tag.buffer(0.15)])
-# keep copper 0.5 mm off the board edge and hanging hole
+# ---- frame: thin double ring with iron thorns, and a gothic arch over the cap
+frame = [ring(CX, CY, RI, 0.55), ring(CX, CY, RI - 1.1, 0.2)]
+for i in range(48):
+    ang = math.radians(i * 7.5)
+    L = 1.6 if i % 2 == 0 else 0.9
+    x0, y0 = CX + (RI - 1.1) * math.cos(ang), CY + (RI - 1.1) * math.sin(ang)
+    x1, y1 = CX + (RI - 1.1 - L) * math.cos(ang), CY + (RI - 1.1 - L) * math.sin(ang)
+    nx, ny = -math.sin(ang) * 0.3, math.cos(ang) * 0.3
+    frame.append(Polygon([(x0 + nx, y0 + ny), (x1, y1), (x0 - nx, y0 - ny)]))
+frame = unary_union(frame)
+# a few cold stars, far from the light
+sky = unary_union([sparkle(18, 40, 0.9), sparkle(27, 26, 0.7), sparkle(85, 44, 0.8), sparkle(80, 30, 0.6), circle(36, 20, 0.25), circle(88, 58, 0.25), circle(12, 58, 0.25)])
+
+# ---- cap: black, outlined lancet in silk, gold eyelet around the hanging hole
+cap_in = cap.intersection(outline).buffer(-0.9).difference(box(0, 12.0, 100, 100))
+cap_line = cap_in.buffer(0.15).difference(cap_in.buffer(-0.15))
+eyelet = ring(*HOLE_C, HOLE_R + 1.2, 1.2)
+
+# ---- text: Fraktur in silk on black, under the ground
+text = text_geom("Silent Night", CX, 92.6, 4.0)
+
+# ================================================================ assemble
 board = outline.difference(hole)
-copper = copper.intersection(board.buffer(-0.5))
+gold_open = unary_union([dog_gold, star_gold, bauble_gold, eyelet])
+copper = gold_open.buffer(0.15).intersection(board.buffer(-0.5))
+copper = copper.difference(unary_union([box(x - 2.6, y - 1.3, x + 2.6, y + 1.3) for x, y in LEDS]))
+copper = copper.difference(circle(*STAR_C, 2.8))
 gold_open = gold_open.intersection(copper.buffer(-0.1))
-# silk must not land on gold, and keep 0.25 mm off the edge
-sil_all = sil_all.difference(copper.buffer(0.25)).intersection(board.buffer(-0.3))
-# drop silk specks too small to print (< 0.15 mm features)
-sil_all = sil_all.buffer(-0.075).buffer(0.075)
 
+light = unary_union([beams, lit_ground]).difference(tree.buffer(0.3)).difference(dog.buffer(0.35)).difference(shadow).difference(tree_shadow)
+sil_all = unary_union([light, horizon.difference(dog.buffer(0.35)), tree_edge, tree_rim, frame, sky, cap_line, text])
+sil_all = sil_all.difference(bauble_cut).difference(led_keep).difference(copper.buffer(0.25)).intersection(board.buffer(-0.3))
+sil_all = sil_all.buffer(-0.075).buffer(0.075)
 # ---------------------------------------------------------------- write SVGs
 HDR = '<?xml version="1.0" encoding="UTF-8"?>\n<!-- {c} | 100 x 100 mm, origin top-left, 1 unit = 1 mm. Import into KiCad at X=0 Y=0, scale 1.0 -->\n<svg xmlns="http://www.w3.org/2000/svg" width="100mm" height="100mm" viewBox="0 0 100 100">\n'
 
@@ -332,11 +370,16 @@ def write(name, comment, body):
         f.write(HDR.format(c=comment) + body + "\n</svg>\n")
 
 edge_lines = [ring_d(outline.simplify(0.005).exterior.coords), ring_d(hole.exterior.coords)]
-write("01_Edge.Cuts.svg", "Edge.Cuts: ornament outline (90 mm disc + gothic cap) and 3.5 mm hanging hole, outlines only",
+write("01_Edge.Cuts.svg", "Edge.Cuts: ornament outline (90 mm disc + gothic cap, flat at the bottom for USB-C) and 3.5 mm hanging hole, outlines only",
       "\n".join(f'<path d="{d_}" fill="none" stroke="#000" stroke-width="0.1"/>' for d_ in edge_lines))
 write("02_F.Cu.svg", "F.Cu: copper under the gold art (ENIG). Filled shapes = copper. Grown 0.15 mm past the mask openings", fill_paths(copper))
 write("03_F.Mask.svg", "F.Mask: filled shapes = solder mask OPENINGS = exposed ENIG gold", fill_paths(gold_open))
-write("04_F.Silkscreen.svg", "F.Silkscreen: tree, star rays, moon, snow, frame and Silent Night text (white legend)", fill_paths(sil_all))
+write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 body outlines). Place D1..D10 on F.Cu at these centres", fill_paths(led_outline.union(unary_union([LineString([(x-1.6,y),(x+1.6,y)]).buffer(0.05).union(LineString([(x,y-1.6),(x,y+1.6)]).buffer(0.05)) for x,y in LEDS]))))
+with open(os.path.join(OUT, "_leds.txt"), "w") as f:
+    f.write("# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = board top-left)\n")
+    for i, (x, y) in enumerate(LEDS):
+        f.write(f"D{i+1}, {x:.2f}, {y:.2f}, 0\n")
+write("04_F.Silkscreen.svg", "F.Silkscreen: light beams, lit snow (clear of the 10 LEDs), tree outline, frame and Silent Night text (white legend)", fill_paths(sil_all))
 
 # ---------------------------------------------------------------- preview (colours)
 MASK, GOLD, GOLD_HI, SILK, COV = "#121214", "#d9b14a", "#f0d27a", "#efeee8", "#2a2620"
@@ -348,19 +391,31 @@ def colored(g, c, extra=""):
     return "\n".join(paths)
 
 board_d = ring_d(outline.exterior.coords) + " " + ring_d(hole.exterior.coords)
-prev = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="-2 -2 104 104">
+def led_svg(x, y, on):
+    g = ""
+    if on:
+        g += f'<circle cx="{x}" cy="{y}" r="6" fill="url(#ledglow)"/>'
+    g += f'<rect x="{x-1.45}" y="{y-0.7}" width="0.75" height="1.4" fill="#cfcfcf"/><rect x="{x+0.7}" y="{y-0.7}" width="0.75" height="1.4" fill="#cfcfcf"/>'
+    g += f'<rect x="{x-0.7}" y="{y-0.62}" width="1.4" height="1.24" fill="{'#fff6d8' if on else '#e8e2c8'}" stroke="#9a9070" stroke-width="0.08"/>'
+    return g
+def preview(lit, name):
+    body = "".join(led_svg(x, y, i in lit) for i, (x, y) in enumerate(LEDS))
+    prev = f'''<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="1000" viewBox="-2 -2 104 104">
 <defs>
- <radialGradient id="sheen" cx="0.42" cy="0.38" r="0.75"><stop offset="0" stop-color="#2b2b30"/><stop offset="1" stop-color="{MASK}"/></radialGradient>
+ <radialGradient id="sheen" cx="0.42" cy="0.38" r="0.75"><stop offset="0" stop-color="#26262b"/><stop offset="1" stop-color="{MASK}"/></radialGradient>
  <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="{GOLD_HI}"/><stop offset="0.55" stop-color="{GOLD}"/><stop offset="1" stop-color="#a8822c"/></linearGradient>
+ <radialGradient id="ledglow"><stop offset="0" stop-color="#fff3c4" stop-opacity="0.95"/><stop offset="0.35" stop-color="#ffd76a" stop-opacity="0.45"/><stop offset="1" stop-color="#ffcc40" stop-opacity="0"/></radialGradient>
  <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="1.2"/></filter>
 </defs>
 <rect x="-2" y="-2" width="104" height="104" fill="#e9e6df"/>
 <path d="{board_d}" fill="url(#sheen)" fill-rule="evenodd" stroke="#000" stroke-width="0.25"/>
-{colored(copper.difference(gold_open), COV)}
 {colored(gold_open, "url(#gold)")}
 <g opacity="0.35" filter="url(#glow)">{colored(star_gold, GOLD_HI)}</g>
 {colored(sil_all, SILK)}
+{body}
 </svg>'''
-with open(os.path.join(OUT, "preview.svg"), "w") as f:
-    f.write(prev)
+    with open(os.path.join(OUT, name), "w") as f:
+        f.write(prev)
+preview([], "preview.svg")
+preview([9], "preview_lit.svg")
 print("ok", len(no_holes(copper)), len(no_holes(gold_open)), len(no_holes(sil_all)))
