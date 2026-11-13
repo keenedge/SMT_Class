@@ -8,7 +8,7 @@ The board fits inside an **85 x 85 mm** square (83.3 mm wide, 85.0 mm tall). Eve
 **Black solder mask + ENIG finish + white silkscreen.**
 - **Yellow dog:** copper with the mask opened over it, so it comes out gold. Its details are strips of mask left on the copper.
 - **Black dog:** plain black mask with white silkscreen line work, a thin gold rim on the edges facing the star, and a gold eye and tag.
-- **Guide dog jackets:** both Labs wear a training jacket lettered "BC & ALBERTA GUIDE DOGS". The black dog's jacket is solid white silkscreen with the letters left black. The yellow dog's jacket is black mask with a white outline and white letters. The letters are 1.5 mm tall on the black dog and 1.3 mm on the yellow dog, in bold sans. That is above the usual 1.0 mm silkscreen minimum, but ask your fab if unsure. The jackets carry the name only, not the organisation's logo.
+- **Guide dog jackets:** both Labs wear a training jacket lettered "BCAGD" (BC & Alberta Guide Dogs), with the letters following the curve of the dog's back. The black dog's jacket is solid white silkscreen with the letters left black. The yellow dog's jacket is black mask with a white outline and white letters. The letters are about 2.6 mm tall on the black dog and 2.2 mm on the yellow dog. To change the word, set `JK_WORD` when running the build script.
 - **White dog:** solid white silkscreen with black details and a gold bell.
 - **Tree:** black mask with white edge lines. The dogs and the present sit in front of it. The star, the hanging eyelet and the present's ribbon are gold.
 

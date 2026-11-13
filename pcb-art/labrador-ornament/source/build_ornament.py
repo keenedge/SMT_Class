@@ -212,8 +212,40 @@ Y = dict(sc=0.86, dx=7.0)
 SANS = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
 jk_raw = Polygon([(27.0, 55.8), (13.0, 72.0), (16.5, 77.6), (27.5, 78.2), (36.0, 73.4), (38.6, 63.0), (34.0, 58.2)]).buffer(-2.5, join_style=1).buffer(2.5, join_style=1).intersection(dog)
 strap_raw = unary_union([stroke([(36.8, 65.0), (42.4, 66.6)], 1.5, smooth=False), stroke([(31.0, 77.0), (33.6, 81.6), (37.4, 83.0)], 1.3)]).intersection(dog).difference(jk_raw)
-jk_text_raw = unary_union([text_geom(t, x, y, 1.75, font=SANS, track=0.04) for t, x, y in
-                           [("BC &", 31.6, 63.0), ("ALBERTA", 30.6, 65.9), ("GUIDE", 29.4, 68.8), ("DOGS", 28.4, 71.7)]])
+def text_on_path(txt, line, cap_h, font, track=0.08):
+    """Lay glyphs along a LineString baseline (centred), each rotated to the local tangent."""
+    f = TTFont(font); gs = f.getGlyphSet(); cmap = f.getBestCmap()
+    upm = f["head"].unitsPerEm; sc = cap_h / (f["OS/2"].sCapHeight or 0.7 * upm)
+    glyphs, total = [], 0.0
+    for ch in txt:
+        g = gs[cmap[ord(ch)]]
+        fp = FlatPen(gs); g.draw(fp)
+        geo = Polygon()
+        for c in fp.contours:
+            geo = geo.symmetric_difference(Polygon([(px * sc, -py * sc) for px, py in c]).buffer(0))
+        w = g.width * sc
+        glyphs.append((geo, w)); total += w + track * cap_h
+    total -= track * cap_h
+    pos = line.length - total - 1.4      # sit toward the shoulder end of the jacket
+    out = []
+    for geo, w in glyphs:
+        mid = pos + w / 2
+        p0, p1 = line.interpolate(mid - 0.3), line.interpolate(mid + 0.3)
+        th = math.atan2(p1.y - p0.y, p1.x - p0.x)
+        c, sn = math.cos(th), math.sin(th)
+        pm = line.interpolate(mid)
+        # glyph is centred on its advance, rotated to the tangent, then moved to the path point
+        out.append(affinity.affine_transform(affinity.translate(geo, -w / 2, 0), [c, -sn, sn, c, pm.x, pm.y]))
+        pos += w + track * cap_h
+    return unary_union(out)
+JK_WORD = os.environ.get("JK_WORD", "BCAGD")
+_back = LineString(catmull([(16.6, 78.4), (18.6, 72.6), (21.2, 67.8), (24.6, 63.2), (27.6, 58.2)], closed=False))
+_base = _back.offset_curve(5.4)
+if not dog.contains(_base.interpolate(0.5, normalized=True)):
+    _base = _back.offset_curve(-5.4)
+if _base.coords[0][1] < _base.coords[-1][1]:
+    _base = LineString(list(_base.coords)[::-1])     # read from the rump up toward the head
+jk_text_raw = text_on_path(JK_WORD, _base, 3.0, SANS)
 print("JACKET", [round(v,1) for v in jk_raw.bounds], "TEXT", [round(v,1) for v in jk_text_raw.bounds], "fits", jk_raw.buffer(-0.6).contains(jk_text_raw))
 dog_dark = dog_dark.difference(jk_raw.buffer(0.3))
 bdog, bdark = place(dog, **B), place(dog_dark, **B)
