@@ -8,7 +8,7 @@ The board fits inside an **85 x 85 mm** square (83.7 mm wide, 84.8 mm tall). Eve
 **Black solder mask + ENIG finish + white silkscreen.**
 - **Yellow dog:** copper with the mask opened over it, so it comes out gold. Its details are strips of mask left on the copper.
 - **Black dog:** plain black mask with white silkscreen line work, a thin gold rim on the edges facing the star, and a gold eye and tag.
-- **Guide dog jackets:** both Labs wear a training jacket lettered "BCAGD" (BC & Alberta Guide Dogs), with the letters following the curve of the dog's back. The black dog's jacket is solid white silkscreen with the letters left black. The yellow dog's jacket is black mask with a white outline and white letters. The letters are about 2.6 mm tall on the black dog and 2.2 mm on the yellow dog. To change the word, set `JK_WORD` when running the build script.
+- **Guide dog jackets:** both Labs wear a training jacket lettered "BCAGD" (spelling to be confirmed) (BC & Alberta Guide Dogs), with the letters following the curve of the dog's back. The black dog's jacket is solid white silkscreen with the letters left black. The yellow dog's jacket is black mask with a white outline and white letters. The letters are about 2.6 mm tall on the black dog and 2.2 mm on the yellow dog. To change the word, set `JK_WORD` when running the build script.
 - **White dog:** solid white silkscreen with black details and a gold bell.
 - **Present:** gold ribbon and bow, white box outline. The puppy's head, paws and tail are gold with dark engraved details.
 - **Tree:** black mask with white edge lines. The dogs and the present sit in front of it. The star, the hanging eyelet and the present's ribbon are gold.
@@ -31,23 +31,45 @@ These are estimates. Weigh your actual holder: every 1 g of difference in the ba
 - Gold stops 0.5 mm short of the board edge.
 
 ## LEDs and power (from smt_tree.kicad_sch)
-The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz, one 0805 LED per output through 330 Ω.
-- The ten LEDs are spread over the scene. `_leds.txt` has every XY position and rotation, plus the battery holder centre.
+The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz. There are 10 LEDs: 7 on the tree in 5 groups, 1 in the star, 2 in the puppy's eyes, and none on the dogs. `_leds.txt` has every XY position and rotation, plus the battery holder centre. The schematic file has **not** been edited yet.
 
-| LED | Where | Rotation |
+| LED | Where | Group | Rotation |
+|---|---|---|---|
+| D1, D2 | Tree, lowest tier | 1 | 0° |
+| D3, D4 | Tree, second tier | 2 | 0° |
+| D5 | Tree, middle | 3 | 0° |
+| D6 | Tree, upper | 4 | 0° |
+| D7 | Tree, just under the star | 5 | 0° |
+| D8 | Centre of the star | star | 0° |
+| D9, D10 | Puppy's left and right eye | eyes | 90° |
+
+**The 10 stages** (one 4017 output per stage, Q0 to Q9):
+
+| Stage | Lit | 4017 output |
 |---|---|---|
-| D1 to D4 | Tree baubles, bottom to top | 0° |
-| D5 | Centre of the star | 0° |
-| D6 | Black Lab's eye | 0° |
-| D7 | Yellow Lab's eye | 0° |
-| D8 | White dog's chest, like a glowing bell | 90° |
-| D9, D10 | The puppy's two eyes | 90° |
+| 1 | Tree group 1 (D1, D2) | Q0 |
+| 2 | Tree group 2 (D3, D4) | Q1 |
+| 3 | Tree group 3 (D5) | Q2 |
+| 4 | Tree group 4 (D6) | Q3 |
+| 5 | Tree group 5 (D7) | Q4 |
+| 6 | Star only (D8) | Q5 |
+| 7 | Star only (D8) | Q6 |
+| 8 | Puppy, both eyes (D9, D10) | Q7 |
+| 9 | All off | Q8 (nothing connected) |
+| 10 | Puppy, both eyes (D9, D10) | Q9 |
 
-- The 4017 lights one LED at a time. Wired to Q0..Q9 in this order, the light climbs the tree to the star, visits each dog, then the puppy winks one eye after the other. To make both puppy eyes light together you would have to drive D9 and D10 from one output, which frees one output.
-- Tree and star LEDs have a 4.4 x 2.0 mm clear area. The LEDs on the dogs have a tighter 3.7 x 1.8 mm clear area so the faces survive, which means their vias need to sit close to the pads or in them.
-- The puppy's eyes are only 3.4 mm apart, so D9 and D10 stand upright side by side. 0805 parts fit, but they cover most of the puppy's face. 0603 LEDs on those two positions would look better.
-- **Running from a CR2032 (3 V) needs changes to the schematic.** A standard NE555 needs at least 4.5 V, so swap it for a CMOS 555 such as TLC555 or LMC555 (same SOIC-8 footprint). Blue and white LEDs will be dim or dark at 3 V through 330 Ω, so use red, amber or yellow-green, or lower the resistors. The USB-C connector and its 5k1 resistors are no longer needed.
-- Use a surface-mount holder on B.Cu, so no pins come through the present on the front. The present is 24.5 x 24.5 mm, so pick a compact holder and check its footprint fits. Its pads can extend left onto the ground strip.
+`stage_01.png` to `stage_10.png` show each stage and `preview_stages.png` is a contact sheet of all ten.
+
+**Wiring plan**
+- Tree: each group's output drives its LEDs, one 330 Ω resistor per LED. Groups 1 and 2 have two LEDs each, so a 74HC4017 (stronger outputs than the CD4017) is a good idea.
+- Star: D8 is fed from Q5 and Q6 through two small signal diodes (diode-OR) and one resistor.
+- Puppy eyes: D9 and D10 are fed from Q7 and Q9 through two small diodes into a shared node, then one resistor per eye.
+- Q8 is left unconnected, which gives the all-off stage.
+- Assumption: each tree group lights alone, one after another, so the light climbs the tree. If you want the tree to build up (earlier groups stay on), the groups would need diode-OR from the later outputs instead.
+- Tree and star LEDs have a 4.4 x 2.0 mm clear area; the puppy eyes have a tighter 3.5 x 2.0 mm area, so their vias should sit close to the pads or in them.
+- The puppy's eyes are only 3.4 mm apart, so D9 and D10 stand upright side by side. 0805 parts fit but cover most of the face; 0603 would look better.
+- **Running from a CR2032 (3 V) needs changes to the schematic.** A standard NE555 needs at least 4.5 V, so swap it for a CMOS 555 such as TLC555 or LMC555. Blue and white LEDs will be dim at 3 V, so use red, amber or yellow-green, or lower the resistors. The USB-C connector and its 5k1 resistors are no longer needed.
+- Use a surface-mount holder on B.Cu, so no pins come through the present. The present is 24.5 x 24.5 mm, so pick a compact holder.
 
 ## Import (KiCad 8: PCB Editor > File > Import > Graphics…)
 Use these settings for every file: Placement = At X 0, Y 0; Import scale = 1.0; tick "Group items".
@@ -75,7 +97,7 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 | Non-plated hole >= 0.5 mm | 3.0 mm hanging hole | Pass |
 | Black mask bridge >= 0.13 mm | Only 0.003 mm² specks are below this, at tapered engraving ends | Pass (cosmetic) |
 | Copper spacing >= 0.10 mm | Gaps below 0.16 mm are filled in, so none remain | Pass |
-| Silkscreen line >= 0.15 mm, text >= 1.0 mm tall | Smallest letters are 2.6 mm tall (jackets), caption is 3.3 mm. A few 0.01 to 0.07 mm² slivers remain at tapered line ends | Pass (cosmetic) |
+| Silkscreen line >= 0.15 mm, text >= 1.0 mm tall | Smallest letters are 2.6 mm tall (jackets), caption is 3.3 mm. A few small slivers (about 1.3 mm² in total) remain at tapered line ends | Pass (cosmetic) |
 | Silkscreen to mask opening >= 0.15 mm | 0.21 mm | Pass |
 | LED pads to art copper | 0.25 mm minimum, with mask dams to match | Pass (the first version had 0.06 mm here, which would fail) |
 | Board size for assembly >= 70 x 70 mm | 83.7 x 84.8 mm | Pass |
@@ -83,7 +105,7 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 **Things to know before ordering:**
 - **Delicate tips.** The tree's branch tips and the star's points are narrower than 2 mm at the very end, as thin as 1.6 mm. They cut fine but can chip in handling. The unsupported star stalk is 4.5 mm wide.
 - **Assembly service.** The LEDs are on the front and the 555, 4017, resistors and coin cell holder are on the back, so you need JLCPCB's **Standard PCBA** (double-sided). Standard PCBA lists edge rails and fiducials as necessary. Their pages don't say how they handle odd-shaped outlines, so ask JLCPCB support or use their "Panel by JLCPCB" option and look at their panel preview before paying. They recommend 5 mm process edges.
-- **Component to board edge.** JLCPCB publishes no minimum for components other than copper to edge (0.2 mm). The nearest LED pad is D2 at 0.9 mm from the edge, and the coin cell area keeps at least 1.9 mm clear for a 20.5 mm circle. Check the footprint of your chosen holder: the present area fits a circle about 24 mm across, so larger holders will not fit.
+- **Component to board edge.** JLCPCB publishes no minimum for components other than copper to edge (0.2 mm). The nearest LED pad is D4 at 0.78 mm from the edge (D2 0.80, D6 0.89), and the coin cell area keeps at least 1.9 mm clear for a 20.5 mm circle. Check the footprint of your chosen holder: the present area fits a circle about 24 mm across, so larger holders will not fit.
 - **Finish.** Mask over bare copper is not an issue on this board. Exposed ENIG areas are all 1:1 mask openings.
 - **Edge.Cuts import.** When you import the outline into KiCad, check that it joins into one closed shape.
 
@@ -91,5 +113,5 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 - Matte **black** mask, **white** silkscreen, **ENIG** finish, 1.6 mm FR4. A different board thickness changes the balance.
 
 ## Files
-- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D5) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does.
+- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D8) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does. `preview_stages.png` and `stage_01..10.png` show the 10-stage sequence.
 - `source/build_ornament.py` regenerates every layer and prints the balance (Python 3 with shapely and fonttools). It needs the OFL font UnifrakturMaguntia saved as `source/fonts/frak.ttf`.

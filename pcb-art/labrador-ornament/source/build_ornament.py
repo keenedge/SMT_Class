@@ -367,7 +367,7 @@ def _valid(x, y, placed):
         return False
     return all(abs(x - px) > 5.4 / S or abs(y - py) > 3.6 / S for px, py in placed)
 LEDS = []
-for dx, y in [(3.5, 58.5), (6.5, 48.5), (-2.5, 40.5), (0.5, 30.5)]:      # four on the tree, bottom to top
+for dx, y in [(2.5, 62.0), (10.5, 59.0), (-2.5, 52.5), (8.5, 49.5), (2.5, 43.0), (1.0, 36.5), (0.5, 29.5)]:      # seven on the tree in five groups: 2, 2, 1, 1, 1 from the bottom up
     best = None
     for i in range(-16, 17):
         for j in range(-12, 13):
@@ -381,12 +381,10 @@ for dx, y in [(3.5, 58.5), (6.5, 48.5), (-2.5, 40.5), (0.5, 30.5)]:      # four 
 N_TREE = len(LEDS)
 LEDS.append(STAR_C)                                              # D5: the star
 _pp = lambda p, kw: place(Point(p), **kw).coords[0]
-LEDS.append(_pp((37.4, 45.4), B))                                # D6: black Lab's eye
-LEDS.append(_pp((37.4, 45.4), Y))                                # D7: yellow Lab's eye
-LEDS.append(wl([(7.3, 13.2)])[0])                                # D8: white dog, on its chest like a glowing bell
 LEDS.append((HX - 2.0, HY - 0.3)); LEDS.append((HX + 2.0, HY - 0.3))   # D9, D10: the puppy's eyes
-LED_ROT = [0] * N_TREE + [0, 0, 0, 90, 90, 90]
-LED_NAME = ["tree"] * N_TREE + ["star", "black Lab eye", "yellow Lab eye", "white dog chest", "puppy left eye", "puppy right eye"]
+LED_ROT = [0] * N_TREE + [0, 90, 90]
+LED_NAME = ["tree group 1 (bottom)", "tree group 1 (bottom)", "tree group 2", "tree group 2", "tree group 3", "tree group 4", "tree group 5 (top)", "star", "puppy left eye", "puppy right eye"]
+STAGES = [[0, 1], [2, 3], [4], [5], [6], [7], [7], [8, 9], [], [8, 9]]      # which LEDs are lit in each of the 10 stages (4017 outputs Q0..Q9)
 def _lbox(x, y, rot, hx, hy):
     return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
 # clear area per LED: generous on the tree, tight on the dogs so the faces survive
@@ -608,6 +606,8 @@ def preview(lit, name):
 preview([], "preview.svg")
 preview([N_TREE], "preview_lit.svg")
 preview(range(len(LEDS)), "preview_all_lit.svg")
+for _k, _st in enumerate(STAGES):
+    preview(_st, f"stage_{_k+1:02d}.svg")
 print("ok", len(no_holes(copper)), len(no_holes(gold_open)), len(no_holes(sil_all)))
 
 # ================================================================ JLCPCB design-rule check (final 85 x 85 mm geometry)
