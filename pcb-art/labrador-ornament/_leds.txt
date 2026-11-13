@@ -9,24 +9,27 @@ D7, 48.26, 24.97, 0   # tree group 5 (top)
 D8, 47.83, 11.37, 0   # star
 D9, 61.30, 58.41, 90   # puppy left eye
 D10, 64.72, 58.41, 90   # puppy right eye
-# front SMT zone: U2 CD4017 SOIC-16, centre 62.77, 69.14, extent 6.4 x 10.4 mm
-# front SMT zone: U1 TLC555 SOIC-8, centre 62.77, 78.74, extent 6.4 x 5.4 mm
-# front SMT zone: R/C/D 1, centre 67.97, 63.74, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 2, centre 67.97, 65.49, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 3, centre 67.97, 67.24, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 4, centre 67.97, 68.99, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 5, centre 67.97, 70.74, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 6, centre 67.97, 72.49, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 7, centre 67.97, 74.24, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 8, centre 67.97, 75.99, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 9, centre 77.97, 67.54, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 10, centre 77.97, 69.29, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 11, centre 77.97, 71.04, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 12, centre 77.97, 72.79, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 13, centre 77.97, 74.54, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 14, centre 77.97, 76.29, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 15, centre 77.97, 78.04, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 16, centre 77.97, 79.79, extent 3.1 x 1.0 mm
-# front SMT zone: R/C/D 17, centre 77.97, 81.54, extent 3.1 x 1.0 mm
-J1 USB-C receptacle (SMT, F.Cu), centre 71.20, 81.11, extent 9.2 x 7.6 mm, mouth on the bottom edge
+# front SMT zone: U2, centre 63.10, 69.80, extent 6.4 x 10.4 mm
+# front SMT zone: U1, centre 70.40, 67.80, extent 6.4 x 5.4 mm
+# front SMT zone: R3, centre 68.80, 72.60, extent 3.0 x 1.5 mm
+# front SMT zone: R4, centre 72.00, 72.60, extent 3.0 x 1.5 mm
+# front SMT zone: R5, centre 75.20, 72.60, extent 3.0 x 1.5 mm
+# front SMT zone: R6, centre 78.40, 72.60, extent 3.0 x 1.5 mm
+# front SMT zone: R7, centre 68.80, 74.30, extent 3.0 x 1.5 mm
+# front SMT zone: R8, centre 72.00, 74.30, extent 3.0 x 1.5 mm
+# front SMT zone: R9, centre 75.20, 74.30, extent 3.0 x 1.5 mm
+# front SMT zone: R10, centre 78.40, 74.30, extent 3.0 x 1.5 mm
+# front SMT zone: R11, centre 68.80, 76.00, extent 3.0 x 1.5 mm
+# front SMT zone: R12, centre 72.00, 76.00, extent 3.0 x 1.5 mm
+# front SMT zone: D11, centre 75.20, 76.00, extent 3.0 x 1.5 mm
+# front SMT zone: D12, centre 78.40, 76.00, extent 3.0 x 1.5 mm
+# front SMT zone: D13, centre 76.00, 64.90, extent 3.0 x 1.5 mm
+# front SMT zone: D14, centre 79.20, 64.90, extent 3.0 x 1.5 mm
+# front SMT zone: R1, centre 76.00, 66.60, extent 3.0 x 1.5 mm
+# front SMT zone: R2, centre 79.20, 66.60, extent 3.0 x 1.5 mm
+# front SMT zone: C1, centre 76.00, 68.30, extent 3.0 x 1.5 mm
+# front SMT zone: C2, centre 79.20, 68.30, extent 3.0 x 1.5 mm
+# front SMT zone: R13, centre 76.00, 70.00, extent 3.0 x 1.5 mm
+# front SMT zone: R14, centre 79.20, 70.00, extent 3.0 x 1.5 mm
+J1 USB-C receptacle (SMT, F.Cu), footprint origin 71.20, 82.01, mouth toward the bottom edge
 # hanging hole 47.83, 3.33; centre of mass with battery 47.84, 63.98

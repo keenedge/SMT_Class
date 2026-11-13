@@ -481,7 +481,7 @@ _ends = LROT(unary_union([Polygon([(BX - 1.2, KY + 1.4), (BX + 0.6, KY + 1.4), (
 _knotline = bow_knot.buffer(0.35).difference(bow_knot.buffer(-0.05))
 bow_gold = unary_union([bow_loops.difference(_holes), _ends]).difference(_knotline).union(bow_knot.buffer(-0.05))
 lid_band = LROT(box(PX0 - 1.5, BT - 3.3, PX1 + 1.5, BT - 0.7))
-vband = box(BX - 1.5, BT, BX + 1.5, 99.6 - 11.0 / S)   # ribbon stops above the USB-C connector
+vband = box(BX - 1.5, BT, BX + 1.5, BT + 3.0 / S)   # short ribbon stub under the lid; the box front is for parts
 ribbon = unary_union([vband.difference(_ends.buffer(0.35)).difference(lid.buffer(0.35)), lid_band.difference(bow.buffer(0.35)).difference(_ends.buffer(0.35)), bow_gold,
                       ]).intersection(safe_cu)
 pin = box(PX0, BT, PX1, 99.6).intersection(board).buffer(-0.8)
@@ -524,6 +524,7 @@ def fin(g):
 def finp(p):
     return (p[0] * S + _dx, p[1] * S + _dy)
 outline, hole, copper, gold_open, sil_all = fin(outline), fin(hole), fin(copper), fin(gold_open), fin(sil_all)
+sil_all = sil_all.difference(box(64.0, 83.2, 78.4, 86.0))     # no white box line under the USB-C mouth
 LEDS = [finp(p) for p in LEDS]
 BAT_C, HOLE_C = finp(BAT_C), finp(HOLE_C)
 cx, cy = finp((cx, cy))
@@ -536,23 +537,19 @@ _by0, _by1 = finp((0, BT))[1], finp((0, 99.6))[1]
 _rbx = finp((BX, 0))[0]
 print("BOX final x", round(_bx0, 2), round(_bx1, 2), "y", round(_by0, 2), round(_by1, 2), "ribbon x", round(_rbx, 2))
 def _rect(cx_, cy_, w_, h_): return box(cx_ - w_ / 2, cy_ - h_ / 2, cx_ + w_ / 2, cy_ + h_ / 2)
-PARTS = []   # (ref, kind, cx, cy, w, h)
-_lx = _bx0 + 1.6                      # left column start
-PARTS.append(("U2 CD4017 SOIC-16", "ic", _lx + 3.2, _by0 + 8.0, 6.4, 10.4))
-PARTS.append(("U1 TLC555 SOIC-8", "ic", _lx + 3.2, _by0 + 17.6, 6.4, 5.4))
-_cxl = _lx + 8.4                      # resistor column left of the ribbon
-_ri = 0
-for k in range(8):                   # 0603 passives, 3.1 x 1.0 mm footprint extent, 1.7 mm pitch
-    PARTS.append((f"R/C/D {_ri+1}", "passive", _cxl, _by0 + 2.6 + 1.75 * k, 3.1, 1.0)); _ri += 1
-_rx = (_rbx + 1.3 + _bx1 - 1.6) / 2 + 1.0   # area right of the ribbon
-for k in range(9):
-    for j in range(2):
-        PARTS.append((f"R/C/D {_ri+1}", "passive", _rx - 0.0, _by0 + 6.4 + 1.75 * k, 3.1, 1.0)) if j == 0 else None
-        if j == 0: _ri += 1
-USB_C = (BAT_C[0], _by1 - 3.8, 9.2, 7.6)       # J1 USB-C receptacle, mouth at the bottom edge of the board
-HOLDER_PADS = []
-parts_outline = unary_union([_rect(*p[2:]).exterior.buffer(0.05) for p in PARTS])
-pad_guide = _rect(*USB_C).exterior.buffer(0.05)
+PARTS = []   # (ref, kind, cx, cy, w, h, rot)
+PARTS.append(("U2", "ic", 63.1, 69.8, 6.4, 10.4, 0))
+PARTS.append(("U1", "ic", 70.4, 67.8, 6.4, 5.4, 0))
+_slots = [(x, y) for y in (72.6, 74.3, 76.0) for x in (68.8, 72.0, 75.2, 78.4)] + [(x, y) for y in (64.9, 66.6, 68.3, 70.0) for x in (76.0, 79.2)]
+_refs = ["R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "D11", "D12", "D13", "D14", "R1", "R2", "C1", "C2", "R13", "R14"]
+for _r, (_x, _y) in zip(_refs, _slots):
+    PARTS.append((_r, "passive", _x, _y, 3.0, 1.5, 0))
+USB_C = (71.2, _by1 - 2.9, 12.1, 8.2)      # J1 origin; mouth toward the bottom edge, PCB-edge line at the board edge
+USB_BOX = (71.2, _by1 - 3.6, 10.0, 7.4)
+parts_outline = unary_union([_rect(*p[2:6]).exterior.buffer(0.05) for p in PARTS])
+import json
+json.dump({"parts": PARTS, "usb": USB_C}, open(os.path.join(OUT, "parts.json"), "w"))
+pad_guide = _rect(*USB_BOX).exterior.buffer(0.05)
 _bare_fx = finp((board.centroid.x, board.centroid.y))[0]
 print(f"FINALX bare={_bare_fx:.2f} battery={BAT_C[0]:.2f} combined={cx:.2f} hole={HOLE_C[0]:.2f} board_g={M_BOARD:.1f} tot_g={M_BOARD+M_BAT:.1f} bat_xy=({BAT_C[0]:.2f},{BAT_C[1]:.2f})")
 print("FINAL bounds", [round(v, 2) for v in outline.bounds], "hole", [round(v, 2) for v in HOLE_C], "com", round(cx, 2), round(cy, 2))
@@ -592,7 +589,7 @@ with open(os.path.join(OUT, "_leds.txt"), "w") as f:
     for i, (x, y) in enumerate(LEDS):
         f.write(f"D{i+1}, {x:.2f}, {y:.2f}, {LED_ROT[i]}   # {LED_NAME[i]}\n")
     for p in PARTS: f.write(f"# front SMT zone: {p[0]}, centre {p[2]:.2f}, {p[3]:.2f}, extent {p[4]:.1f} x {p[5]:.1f} mm\n")
-    f.write(f"J1 USB-C receptacle (SMT, F.Cu), centre {USB_C[0]:.2f}, {USB_C[1]:.2f}, extent {USB_C[2]} x {USB_C[3]} mm, mouth on the bottom edge\n")
+    f.write(f"J1 USB-C receptacle (SMT, F.Cu), footprint origin {USB_C[0]:.2f}, {USB_C[1]:.2f}, mouth toward the bottom edge\n")
     f.write(f"# hanging hole {HOLE_C[0]:.2f}, {HOLE_C[1]:.2f}; centre of mass with battery {cx:.2f}, {cy:.2f}\n")
 
 MASK, GOLD, GOLD_HI, SILK = "#121214", "#d9b14a", "#f0d27a", "#efeee8"

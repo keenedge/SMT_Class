@@ -31,7 +31,7 @@ These are estimates. Weigh the real parts: every 0.5 g of difference in the part
 - Gold stops 0.5 mm short of the board edge.
 
 ## LEDs and power (from smt_tree.kicad_sch)
-The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz, powered from 5 V USB. There are 10 LEDs: 7 on the tree in 5 groups, 1 in the star, 2 in the puppy's eyes, and none on the dogs. `_leds.txt` has every XY position and rotation, plus the USB-C connector position. The schematic file has **not** been edited yet.
+The circuit is a TLC555 (CMOS 555) clocking a 74HC4017 at roughly 3.6 Hz, powered from 5 V USB. There are 10 LEDs: 7 on the tree in 5 groups, 1 in the star, 2 in the puppy's eyes, and none on the dogs. `_leds.txt` has every XY position and rotation, plus the USB-C connector position. The schematic file has **not** been edited yet.
 
 | LED | Where | Group | Rotation |
 |---|---|---|---|
@@ -61,20 +61,24 @@ The circuit is an NE555 clocking a CD4017 at roughly 3.6 Hz, powered from 5 V US
 `stage_01.png` to `stage_10.png` show each stage and `preview_stages.png` is a contact sheet of all ten.
 
 **Wiring plan**
-- Tree: each group's output drives its LEDs, one 330 Ω resistor per LED. Groups 1 and 2 have two LEDs each, so a 74HC4017 (stronger outputs than the CD4017) is a good idea.
+- Tree: each group's output drives its LEDs, one 1 kΩ resistor per LED, about 2 mA each. Groups 1 and 2 have two LEDs, so they load an output with about 4 mA, which is what a 74HC4017 can drive. A CD4017B can only source about 1 mA at 5 V, so use the 74HC4017 (same pinout).
 - Star: D8 is fed from Q5 and Q6 through two small signal diodes (diode-OR) and one resistor.
 - Puppy eyes: D9 and D10 are fed from Q7 and Q9 through two small diodes into a shared node, then one resistor per eye.
 - Q8 is left unconnected, which gives the all-off stage.
 - Assumption: each tree group lights alone, one after another, so the light climbs the tree. If you want the tree to build up (earlier groups stay on), the groups would need diode-OR from the later outputs instead.
 - Tree and star LEDs have a 4.4 x 2.0 mm clear area; the puppy eyes have a tighter 3.5 x 2.0 mm area, so their vias should sit close to the pads or in them.
 - The puppy's eyes are only 3.4 mm apart, so D9 and D10 stand upright side by side. 0805 parts fit but cover most of the face; 0603 would look better.
-- **Power is USB-C only, 5 V, no cell.** That keeps the standard NE555 and CD4017 and lets white and blue LEDs work. The USB-C connector needs two 5.1 kΩ CC resistors to the pins. Add a small reverse and ESD part if you like. The CD4017's 5 V outputs through 330 Ω give about 5 to 8 mA per LED, so groups 1 and 2 (two LEDs each) load a pin at 10 to 16 mA: a 74HC4017 is better, or raise the resistors to 470 Ω.
-- **Parts layout.** Everything is SMT on the front, inside the gift box together with the LEDs. There are no through-hole parts and nothing on the back.
-  - The guide layer shows the reserved zones: U2 CD4017 (SOIC-16) and U1 555 (SOIC-8) in the left of the box, a column of 8 passive footprints beside them, 9 more passives right of the ribbon, and J1 USB-C at the bottom edge (9.2 x 7.6 mm, mouth on the board edge, X = 71.20, Y = 81.11). `_leds.txt` has the centres.
-  - **The USB-C footprint is a placeholder.** Use the footprint of the receptacle you pick (a mid-mount or top-mount 16-pin part, about 9 mm wide). The gold ribbon stops above it. Keep the connector's pads at least 0.25 mm from art copper.
-  - The parts sit on black mask, so the box shows only the gold ribbon and its white outline. Keep the gold ribbon 0.25 mm or more away from part pads.
+- **Power is USB-C only, 5 V, no cell.** U1 must be a CMOS 555 (TLC555) because a bipolar NE555 at 5 V gives only about 3.5 V logic high, which is marginal for the 4017 clock input. White and blue LEDs work at 5 V. J1 needs two 5.1 kΩ CC resistors (R13, R14). Add ESD or reverse protection if you like.
+- **Parts layout.** Everything is SMT on the front, inside the gift box with the LEDs. There are no through-hole parts and nothing on the back. The short gold ribbon stub under the lid is all that is left of the vertical ribbon.
+  - Layout in the gift box: U2 (74HC4017, SOIC-16) at left, U1 (TLC555, SOIC-8) next to it, 20 0805 parts (R1 to R14, C1, C2, D11 to D14) in two blocks right of the ICs, and J1 (USB-C) at the bottom edge. `smt_tree.kicad_pcb` has them placed, and `preview_pcb_layout.png` shows the pads. `_leds.txt` and `parts.json` have the coordinates.
+  - The USB-C footprint is the GCT USB4135-GF-A 6-pin top-mount from the original project, rotated so its mouth points down and overhangs the bottom edge by about 0.5 mm. Change it if you pick another receptacle.
+  - The parts sit on black mask. Pads stay at least 0.25 mm from gold art copper (checked), and reference designators are on F.Fab so the silkscreen art stays clean.
+
+## KiCad project files
+The repository root has the updated `smt_tree.kicad_sch` and `smt_tree.kicad_pcb`. The PCB is built from the same layers as the SVGs: the board outline, hanging hole, F.Cu art, F.Mask openings and F.Silkscreen art are drawn as graphic polygons, with the board's top-left corner at X = 100, Y = 60 on the KiCad sheet. All 33 footprints are placed and carry their nets. **Nothing is routed yet**: open it, press **Update PCB from Schematic** (F8) if prompted, and route the ratsnest. The files were generated without KiCad here, so run ERC and DRC first and tell me about any errors.
 
 ## Import (KiCad 8: PCB Editor > File > Import > Graphics…)
+Only needed if you want the art in another project. Skip this if you use `smt_tree.kicad_pcb`.
 Use these settings for every file: Placement = At X 0, Y 0; Import scale = 1.0; tick "Group items".
 
 | File | Import onto layer | What it does |
@@ -116,5 +120,5 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 - Matte **black** mask, **white** silkscreen, **ENIG** finish, 1.6 mm FR4. A different board thickness changes the balance.
 
 ## Files
-- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D8) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does. `preview_stages.png` and `stage_01..10.png` show the 10-stage sequence. `preview_parts_zone.png` overlays the parts zones and USB-C position (blue).
+- `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D8) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does. `preview_pcb_layout.png` shows the placed pads. `preview_stages.png` and `stage_01..10.png` show the 10-stage sequence. `preview_parts_zone.png` overlays the parts zones and USB-C position (blue).
 - `source/build_ornament.py` regenerates every layer and prints the balance (Python 3 with shapely and fonttools). It needs the OFL font UnifrakturMaguntia saved as `source/fonts/frak.ttf`.
