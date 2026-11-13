@@ -385,10 +385,34 @@ LEDS.append((HX - 2.0, HY - 0.3)); LEDS.append((HX + 2.0, HY - 0.3))   # D9, D10
 LED_ROT = [0] * N_TREE + [0, 90, 90]
 LED_NAME = ["tree group 1 (bottom)", "tree group 1 (bottom)", "tree group 2", "tree group 2", "tree group 3", "tree group 4", "tree group 5 (top)", "star", "puppy left eye", "puppy right eye"]
 STAGES = [[0, 1], [2, 3], [4], [5], [6], [7], [7], [8, 9], [], [8, 9]]      # which LEDs are lit in each of the 10 stages (4017 outputs Q0..Q9)
+# ---- each LED's series resistor (0805, R3..R10 on the tree and star, R11/R12 for the puppy eyes) goes right next to its LED
+def _rrect(x, y, rot, grow=0.0):
+    hx, hy = (1.45 + grow) / S, (0.7 + grow) / S
+    return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
+RPOS = []      # (ref, x, y, rot) in design coordinates
+_rkeeps = []
+_pad_boxes = [box(x - 1.5 / S, y - 0.75 / S, x + 1.5 / S, y + 0.75 / S) if LED_ROT[i] == 0 else box(x - 0.75 / S, y - 1.5 / S, x + 0.75 / S, y + 1.5 / S) for i, (x, y) in enumerate(LEDS)]
+for i in range(8):                          # R3..R10 for D1..D8
+    x0, y0 = LEDS[i]; best = None
+    for rot in (0, 90):
+        for a in range(-40, 41):
+            for b in range(-28, 29):
+                x, y = x0 + a * 0.2 / S, y0 + b * 0.2 / S
+                rr = _rrect(x, y, rot, 0.55)
+                if not _ok_zone.contains(box(*_rrect(x, y, rot, 0.0).bounds)) or occl.intersects(_rrect(x, y, rot, 0.6)): continue
+                if any(rr.intersects(pb.buffer(0.35 / S)) for pb in _pad_boxes) or any(rr.intersects(k) for k in _rkeeps): continue
+                if rr.distance(Point(*STAR_C)) < 0 : continue
+                d = (a * 0.2) ** 2 + (b * 0.2) ** 2 + (0.0 if rot == 0 else 0.5)
+                if best is None or d < best[0]: best = (d, x, y, rot)
+    if best is None: print("R NO ROOM near LED", i + 1); best = (0, x0 + 3.5 / S, y0, 0)
+    RPOS.append((f"R{i+3}", best[1], best[2], best[3])); _rkeeps.append(_rrect(best[1], best[2], best[3], 0.55))
+_eyeY = BT + 3.76 / S
+RPOS.append(("R11", HX - 2.0, _eyeY, 90)); RPOS.append(("R12", HX + 2.0, _eyeY, 90))
+for _r in RPOS[8:]: _rkeeps.append(_rrect(_r[1], _r[2], _r[3], 0.55))
 def _lbox(x, y, rot, hx, hy):
     return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
 # clear area per LED: generous on the tree, tight on the dogs so the faces survive
-led_keep = unary_union([_lbox(x, y, r, (2.2 if i <= N_TREE else 1.75) / S, 1.0 / S) for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT))])
+led_keep = unary_union(_rkeeps + [_lbox(x, y, r, (2.2 if i <= N_TREE else 1.75) / S, 1.0 / S) for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT))])
 for (x, y), r in zip(LEDS, LED_ROT):
     if not safe_cu.contains(_lbox(x, y, r, 1.5 / S, 0.75 / S)): print("LED OFF BOARD", x, y)
 led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
@@ -538,14 +562,17 @@ _rbx = finp((BX, 0))[0]
 print("BOX final x", round(_bx0, 2), round(_bx1, 2), "y", round(_by0, 2), round(_by1, 2), "ribbon x", round(_rbx, 2))
 def _rect(cx_, cy_, w_, h_): return box(cx_ - w_ / 2, cy_ - h_ / 2, cx_ + w_ / 2, cy_ + h_ / 2)
 PARTS = []   # (ref, kind, cx, cy, w, h, rot)
-PARTS.append(("U2", "ic", 63.1, 69.8, 6.4, 10.4, 0))
+PARTS.append(("U2", "ic", 63.1, 72.8, 6.4, 10.4, 0))
 PARTS.append(("U1", "ic", 70.4, 67.8, 6.4, 5.4, 0))
 _slots = [(x, y) for y in (72.6, 74.3, 76.0) for x in (68.8, 72.0, 75.2, 78.4)] + [(x, y) for y in (64.9, 66.6, 68.3, 70.0) for x in (76.0, 79.2)]
-_refs = ["R3", "R4", "R5", "R6", "R7", "R8", "R9", "R10", "R11", "R12", "D11", "D12", "D13", "D14", "R1", "R2", "C1", "C2", "R13", "R14"]
+_refs = ["D11", "D12", "D13", "D14", "R1", "R2", "C1", "C2", "R13", "R14"]
 for _r, (_x, _y) in zip(_refs, _slots):
     PARTS.append((_r, "passive", _x, _y, 3.0, 1.5, 0))
 USB_C = (71.2, _by1 - 2.9, 12.1, 8.2)      # J1 origin; mouth toward the bottom edge, PCB-edge line at the board edge
 USB_BOX = (71.2, _by1 - 3.6, 10.0, 7.4)
+for _r, _x, _y, _rot in RPOS:
+    _fx, _fy = finp((_x, _y))
+    PARTS.append((_r, "passive", _fx, _fy, 3.0 if _rot == 0 else 1.5, 1.5 if _rot == 0 else 3.0, _rot))
 parts_outline = unary_union([_rect(*p[2:6]).exterior.buffer(0.05) for p in PARTS])
 import json
 json.dump({"parts": PARTS, "usb": USB_C}, open(os.path.join(OUT, "parts.json"), "w"))
