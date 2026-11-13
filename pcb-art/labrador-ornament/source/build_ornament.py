@@ -197,7 +197,7 @@ tag = circle(37.4, 58.4, 0.95)  # gold collar tag
 dog_gold = unary_union([dog.difference(dog_dark), tag.difference(circle(37.4, 58.4, 0.3))])
 
 # ================================================================ TWO DOGS + TREE: the board IS the silhouette
-S = 85.0 / 99.0               # the scene is drawn in a 100 mm design space, then scaled so the board fits 85 x 85 mm
+S = 85.0 / 99.4               # the scene is drawn in a 100 mm design space, then scaled so the board fits 85 x 85 mm
 dvec = (-0.58, 0.81)          # direction light travels (from the star, down-left)
 BASE_Y = 89.8                 # where paws and trunk meet the ground strip
 
@@ -275,7 +275,7 @@ trunk = box(TX - 3.0, 74.0, TX + 3.0, BASE_Y + 1)
 neck = box(TX - 2.6, STAR_C[1], TX + 2.6, 26.0)
 star_board = star(*STAR_C, 7.0, 3.9)
 HOLE_C, HOLE_R = (TX, 4.2), 1.5 / S   # 3 mm hanging hole at final size
-eye_tab = circle(*HOLE_C, 3.6)
+eye_tab = circle(*HOLE_C, 3.8)
 tree = unary_union(tier_polys + [trunk, neck])
 
 # ---- ground strip that ties it all together (USB-C goes on its flat bottom edge)
@@ -338,9 +338,13 @@ raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present]
 outline = raw.buffer(1.0 / S, join_style=1).buffer(-1.0 / S, join_style=1)
 outline = outline.buffer(-0.8 / S, join_style=1).buffer(0.8 / S, join_style=1)
 outline = max(polys(outline), key=lambda p: p.area)
-outline = Polygon(outline.exterior)          # no internal cut-outs except the hanging hole
+outline = Polygon(outline.exterior).simplify(0.003)          # no internal cut-outs except the hanging hole
 hole = circle(*HOLE_C, HOLE_R)
 board = outline.difference(hole)
+_bx = BAT_C[0]
+_best = max(((board.boundary.distance(Point(_bx, yy)), yy) for yy in [60 + 0.25 * k for k in range(0, 130)] if board.contains(Point(_bx, yy))))
+BAT_C = (_bx, _best[1])
+print(f"BATTERY: biggest holder circle at x={_bx:.1f}: diameter {2*_best[0]*S:.1f} mm final, centre y={_best[1]:.1f} design")
 safe_cu = board.buffer(-0.5 / S)                 # copper keep-back from the edge
 safe_silk = board.buffer(-0.35 / S)
 # ---- balance: where does it hang?  FR4 1.6 mm ~ 2.96 mg/mm2; CR2032 ~3.0 g + SMD holder ~1.5 g
@@ -386,7 +390,7 @@ LED_NAME = ["tree"] * N_TREE + ["star", "black Lab eye", "yellow Lab eye", "whit
 def _lbox(x, y, rot, hx, hy):
     return box(x - hx, y - hy, x + hx, y + hy) if rot == 0 else box(x - hy, y - hx, x + hy, y + hx)
 # clear area per LED: generous on the tree, tight on the dogs so the faces survive
-led_keep = unary_union([_lbox(x, y, r, (2.2 if i <= N_TREE else 1.85) / S, (1.0 if i <= N_TREE else 0.9) / S) for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT))])
+led_keep = unary_union([_lbox(x, y, r, (2.2 if i <= N_TREE else 1.75) / S, 1.0 / S) for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT))])
 for (x, y), r in zip(LEDS, LED_ROT):
     if not safe_cu.contains(_lbox(x, y, r, 1.5 / S, 0.75 / S)): print("LED OFF BOARD", x, y)
 led_outline = unary_union([box(x - 1.0, y - 0.625, x + 1.0, y + 0.625).exterior.buffer(0.05) for x, y in LEDS])
@@ -448,7 +452,7 @@ bauble_gold = unary_union([unary_union([box(x - 0.7, y - 2.55, x + 0.7, y - 1.85
 
 # ---- STAR + eyelet: gold
 star_gold = star(*STAR_C, 6.2, 3.3).difference(circle(*STAR_C, 2.8))
-eyelet = ring(*HOLE_C, HOLE_R + 1.0, 0.9)
+eyelet = circle(*HOLE_C, HOLE_R + 1.30 / S).difference(circle(*HOLE_C, HOLE_R + 0.65 / S))   # gold starts 0.65 mm from the hole
 
 # ---- GROUND: lit snow line, the dogs' shadows, lettering
 gtop = BASE_Y + 1.2
@@ -463,8 +467,8 @@ snow = box(4.0, gtop + 0.3, PX0 - 3.0, gtop + 0.7)
 CAPTION = "No More Silent Nights"
 _cap = 3.9
 while True:
-    text = text_geom(CAPTION, (1.5 + PX0) / 2 - 0.5, 97.3, _cap)
-    if text.bounds[2] - text.bounds[0] <= PX0 - 1.5 - 7.0: break
+    text = text_geom(CAPTION, (1.5 + PX0) / 2 - 0.5, 97.3, _cap).buffer(0.05 / S)   # +0.05 mm per side so Fraktur hairlines stay above 0.15 mm
+    if text.bounds[2] - text.bounds[0] <= PX0 - 1.5 - 7.0 - 0.2: break
     _cap -= 0.1
 print("caption cap height (final mm)", round(_cap * S, 2))
 # white dog: solid white silk with black engraved details, gold bell on the collar
@@ -504,10 +508,9 @@ bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), 
 
 # ================================================================ assemble
 gold_open = unary_union([ygold, bgold.difference(gapw), star_gold, eyelet, bauble_gold, ribbon, wbell, puppy_gold.intersection(safe_cu), peye_gold]).intersection(safe_cu).difference(led_keep)
-gold_open = gold_open.buffer(-0.07).buffer(0.07)
-copper = gold_open.buffer(0.15).intersection(board.buffer(-0.4)).difference(led_keep.buffer(-0.1))
-# the yellow dog is one solid copper shape (details are mask over copper)
-copper = unary_union([copper, yin.difference(led_keep).difference(gapw)])
+gold_open = gold_open.buffer(-0.07).buffer(0.07).difference(hole.buffer(0.65 / S))
+_c = unary_union([gold_open.buffer(0.15), yin.difference(gapw)]).buffer(0.08 / S).buffer(-0.08 / S)   # close copper gaps below 0.16 mm
+copper = _c.intersection(board.buffer(-0.4)).difference(hole.buffer(0.55 / S)).difference(led_keep)
 gold_open = gold_open.intersection(copper.buffer(-0.1))
 
 sil_all = unary_union([bsilk.difference(gapw), yjk_silk.difference(gapw), tree_silk, snow, text, wsilk, psilk])
@@ -528,6 +531,8 @@ BAT_C, HOLE_C = finp(BAT_C), finp(HOLE_C)
 cx, cy = finp((cx, cy))
 led_outline = unary_union([_lbox(x, y, r, 1.0, 0.625).exterior.buffer(0.05) for (x, y), r in zip(LEDS, LED_ROT)])
 bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
+_bare_fx = finp((board.centroid.x, board.centroid.y))[0]
+print(f"FINALX bare={_bare_fx:.2f} battery={BAT_C[0]:.2f} combined={cx:.2f} hole={HOLE_C[0]:.2f} board_g={M_BOARD:.1f} tot_g={M_BOARD+M_BAT:.1f} bat_xy=({BAT_C[0]:.2f},{BAT_C[1]:.2f})")
 print("FINAL bounds", [round(v, 2) for v in outline.bounds], "hole", [round(v, 2) for v in HOLE_C], "com", round(cx, 2), round(cy, 2))
 # manufacturability at final size: thinnest features
 for nm, g in [("mask", gold_open), ("silk", sil_all)]:
@@ -604,3 +609,59 @@ preview([], "preview.svg")
 preview([N_TREE], "preview_lit.svg")
 preview(range(len(LEDS)), "preview_all_lit.svg")
 print("ok", len(no_holes(copper)), len(no_holes(gold_open)), len(no_holes(sil_all)))
+
+# ================================================================ JLCPCB design-rule check (final 85 x 85 mm geometry)
+print("\n===== JLCPCB CHECK =====")
+brd = outline.difference(hole)
+def mind(a, b): return a.distance(b)
+# 1) copper to board edge / hanging hole
+print("copper -> outline edge:", round(copper.distance(outline.exterior), 3), "mm (rule >= 0.2)")
+print("copper -> hanging hole edge:", round(copper.distance(hole), 3), "mm (JLCPCB advises >= 0.5 near drilled/routed holes)")
+print("gold mask opening -> hole edge:", round(gold_open.distance(hole), 3))
+# 2) outline: concave corner radius and narrow notches / necks
+for r in (0.5, 0.8, 1.0):
+    fill = outline.buffer(r, join_style=1).buffer(-r, join_style=1).difference(outline)
+    print(f"concave corners/notches that a {2*r:.1f} mm bit cannot cut: area {fill.area:.3f} mm2")
+for w in (1.0, 1.6, 2.0):
+    r = w / 2
+    thin = outline.difference(outline.buffer(-r, join_style=1).buffer(r, join_style=1))
+    print(f"outline parts narrower than {w} mm: area {thin.area:.3f} mm2")
+# narrowest neck of the main stalks: sample widths
+from shapely.geometry import LineString as LS
+print("outline vertices:", len(outline.exterior.coords), " min segment length:", round(min(LS([a, b]).length for a, b in zip(outline.exterior.coords[:-1], outline.exterior.coords[1:])), 4))
+# 3) mask: bridges between separate gold openings and thin mask-over-copper strips
+for nm, g in [("gold openings", gold_open)]:
+    closed = g.buffer(0.065).buffer(-0.065)
+    print(f"mask dams narrower than 0.13 mm between {nm}: area {closed.difference(g).area:.3f} mm2")
+    opened = g.buffer(-0.075).buffer(0.075)
+    print(f"gold slivers narrower than 0.15 mm: area {g.difference(opened).area:.4f} mm2")
+# 4) copper: spacing and slivers
+cc = copper.buffer(0.05).buffer(-0.05)
+print("copper gaps narrower than 0.10 mm: area", round(cc.difference(copper).area, 4), "mm2")
+print("copper slivers narrower than 0.10 mm: area", round(copper.difference(copper.buffer(-0.05).buffer(0.05)).area, 4), "mm2")
+# 5) silkscreen min line width and clearance to pads/mask openings
+sc = sil_all
+print("silk slivers narrower than 0.15 mm: area", round(sc.difference(sc.buffer(-0.075).buffer(0.075)).area, 4), "mm2")
+print("silk gaps narrower than 0.15 mm: area", round(sc.buffer(0.075).buffer(-0.075).difference(sc).area, 4), "mm2")
+print("silk -> gold opening:", round(sil_all.distance(gold_open), 3), "mm (rule >= 0.15)")
+print("silk -> board edge:", round(sil_all.distance(outline.exterior), 3), "mm")
+# 6) LEDs: distance of 0805 pad area to the board edge and to hole, and to art copper
+for i, ((x, y), r) in enumerate(zip(LEDS, LED_ROT)):
+    pads = box(x - 1.5, y - 0.75, x + 1.5, y + 0.75) if r == 0 else box(x - 0.75, y - 1.5, x + 0.75, y + 1.5)
+    print(f"D{i+1}: pads->board edge {pads.distance(outline.exterior):.2f} mm, pads->art copper {pads.distance(copper):.2f} mm, inside board: {outline.contains(pads)}")
+bt = Point(BAT_C).buffer(10.25)
+print("coin cell 20.5 mm circle: inside board:", outline.contains(bt), " edge clearance:", round(outline.exterior.distance(bt) if not outline.contains(bt) else bt.distance(outline.exterior), 2), "mm")
+print("board bounds:", [round(v, 2) for v in outline.bounds], " area cm2:", round(outline.area / 100, 1))
+
+def show(label, g, n=6):
+    ps = sorted(polys(g), key=lambda p: -p.area)[:n]
+    for p in ps:
+        b = p.bounds
+        print(f"  {label}: area {p.area:.3f} at x {b[0]:.1f}-{b[2]:.1f}, y {b[1]:.1f}-{b[3]:.1f}")
+print("--- where")
+show("outline narrower than 2 mm", outline.difference(outline.buffer(-1.0, join_style=1).buffer(1.0, join_style=1)))
+show("mask dam < 0.13", gold_open.buffer(0.065).buffer(-0.065).difference(gold_open))
+show("copper gap < 0.10", copper.buffer(0.05).buffer(-0.05).difference(copper))
+show("silk sliver < 0.15", sil_all.difference(sil_all.buffer(-0.075).buffer(0.075)), 8)
+show("silk gap < 0.15", sil_all.buffer(0.075).buffer(-0.075).difference(sil_all), 5)
+show("gold sliver < 0.15", gold_open.difference(gold_open.buffer(-0.075).buffer(0.075)), 5)

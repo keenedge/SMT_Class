@@ -2,7 +2,7 @@
 
 The board itself is cut to the silhouette of the scene: a black Labrador and a yellow Labrador look up at a Christmas tree with a star on top. A small white dog with an antler tied to its head sits in front of them, and a wrapped present with a big bow sits bottom right, with its lid pushed askew by a puppy peeking out from under it, and the puppy's tail poking out the other side. A ground strip ties everything into one board.
 
-The board fits inside an **85 x 85 mm** square (84.0 mm wide, 85.0 mm tall). Every SVG uses the origin at the top-left corner of that square, drawn at 1 SVG unit = 1 mm. Text has already been turned into outlines, and shapes with holes are split into hole-free pieces.
+The board fits inside an **85 x 85 mm** square (83.7 mm wide, 84.8 mm tall). Every SVG uses the origin at the top-left corner of that square, drawn at 1 SVG unit = 1 mm. Text has already been turned into outlines, and shapes with holes are split into hole-free pieces.
 
 ## How the colours are made
 **Black solder mask + ENIG finish + white silkscreen.**
@@ -14,15 +14,15 @@ The board fits inside an **85 x 85 mm** square (84.0 mm wide, 85.0 mm tall). Eve
 - **Tree:** black mask with white edge lines. The dogs and the present sit in front of it. The star, the hanging eyelet and the present's ribbon are gold.
 
 ## Balance
-The 3 mm hanging hole is above the star at X = 52.84 mm. The CR2032 holder goes on the back behind the present, centred at X = 70.26, Y = 73.32, and acts as the counterweight.
+The 3 mm hanging hole is above the star at X = 52.79 mm. The CR2032 holder goes on the back behind the present, centred at X = 70.15, Y = 72.64, and acts as the counterweight.
 
 | Item | Mass used | Centre X |
 |---|---|---|
 | Bare board (1.6 mm FR4, 33 cm²) | 10.0 g | 45.0 mm |
-| CR2032 cell + SMD holder | 4.5 g (3.0 g + 1.5 g) | 70.3 mm |
-| **Combined** | 14.5 g | **52.84 mm** |
+| CR2032 cell + SMD holder | 4.5 g (3.0 g + 1.5 g) | 70.2 mm |
+| **Combined** | 14.5 g | **52.85 mm** |
 
-With those numbers the centre of mass is 0.01 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
+With those numbers the centre of mass is 0.05 mm from the hang line, so it hangs straight. Without the battery it tilts about 9°.
 
 These are estimates. Weigh your actual holder: every 1 g of difference in the battery assembly moves the balance point about 1.25 mm (about 1.2°). To trim, slide the holder: moving it 1 mm sideways moves the balance point about 0.3 mm. The ICs and passives weigh under 1 g in total. Placing them near X = 53 on the back keeps them out of the balance.
 
@@ -61,6 +61,31 @@ Use these settings for every file: Placement = At X 0, Y 0; Import scale = 1.0; 
 | 05_User.Drawings_LED_guide.svg | User.Drawings | The 10 LED positions and the 20 mm coin cell circle. |
 
 There is no F.Paste art layer, because paste on the art would put solder on the gold.
+
+## JLCPCB manufacturability review
+Checked against JLCPCB's published capabilities (rigid PCB page, board outline guide, assembly pages) on the final 85 mm geometry. The check script is at the end of `source/build_ornament.py`.
+
+| Rule (JLCPCB) | This board | Result |
+|---|---|---|
+| Copper to routed edge >= 0.2 mm | 0.37 mm | Pass |
+| Copper to the hanging hole >= 0.5 mm (advised) | 0.55 mm | Pass (was 0.37 before this review, so the gold eyelet ring was moved out) |
+| Routed internal corner radius >= 0.5 to 1.0 mm | Notches narrower than 2.0 mm are closed up, so every inside corner is >= 1 mm radius | Pass |
+| Routed slot / notch width >= 1.0 mm | Narrowest notch is about 2.0 mm | Pass |
+| Single closed outline | One outline plus the circular hanging hole, 1236 vertices, shortest segment 0.06 mm | Pass |
+| Non-plated hole >= 0.5 mm | 3.0 mm hanging hole | Pass |
+| Black mask bridge >= 0.13 mm | Only 0.003 mm² specks are below this, at tapered engraving ends | Pass (cosmetic) |
+| Copper spacing >= 0.10 mm | Gaps below 0.16 mm are filled in, so none remain | Pass |
+| Silkscreen line >= 0.15 mm, text >= 1.0 mm tall | Smallest letters are 2.6 mm tall (jackets), caption is 3.3 mm. A few 0.01 to 0.07 mm² slivers remain at tapered line ends | Pass (cosmetic) |
+| Silkscreen to mask opening >= 0.15 mm | 0.21 mm | Pass |
+| LED pads to art copper | 0.25 mm minimum, with mask dams to match | Pass (the first version had 0.06 mm here, which would fail) |
+| Board size for assembly >= 70 x 70 mm | 83.7 x 84.8 mm | Pass |
+
+**Things to know before ordering:**
+- **Delicate tips.** The tree's branch tips and the star's points are narrower than 2 mm at the very end, as thin as 1.6 mm. They cut fine but can chip in handling. The unsupported star stalk is 4.5 mm wide.
+- **Assembly service.** The LEDs are on the front and the 555, 4017, resistors and coin cell holder are on the back, so you need JLCPCB's **Standard PCBA** (double-sided). Standard PCBA lists edge rails and fiducials as necessary. Their pages don't say how they handle odd-shaped outlines, so ask JLCPCB support or use their "Panel by JLCPCB" option and look at their panel preview before paying. They recommend 5 mm process edges.
+- **Component to board edge.** JLCPCB publishes no minimum for components other than copper to edge (0.2 mm). The nearest LED pad is D2 at 0.9 mm from the edge, and the coin cell area keeps at least 1.9 mm clear for a 20.5 mm circle. Check the footprint of your chosen holder: the present area fits a circle about 24 mm across, so larger holders will not fit.
+- **Finish.** Mask over bare copper is not an issue on this board. Exposed ENIG areas are all 1:1 mask openings.
+- **Edge.Cuts import.** When you import the outline into KiCad, check that it joins into one closed shape.
 
 ## Fab notes
 - Matte **black** mask, **white** silkscreen, **ENIG** finish, 1.6 mm FR4. A different board thickness changes the balance.
