@@ -211,12 +211,12 @@ bdog, bdark = place(dog, **B), place(dog_dark, **B)
 ydog, ydark, ytag = place(dog, **Y), place(dog_dark, **Y), place(tag, **Y)
 
 # ---- tree + star + hanging eyelet
-TX = 76.0
+TX = float(os.environ.get('TX', 60.0))
 STAR_C = (TX, 13.6)
-tiers = [(21.0, 33.0, 8.0), (26.5, 45.0, 12.0), (35.5, 58.0, 15.5), (45.5, 72.0, 18.5)]
+tiers = [(21.0, 35.0, 10.5), (28.0, 48.5, 15.5), (38.0, 62.5, 20.5), (50.0, 77.0, 25.5)]
 tier_polys = []
 for k, (ya, yb, hw) in enumerate(tiers):
-    n = 4 + k
+    n = 5 + k
     pts = [(TX, ya), (TX + hw * 0.22, ya + (yb - ya) * 0.40), (TX + hw * 0.50, ya + (yb - ya) * 0.75),
            (TX + hw * 0.80, ya + (yb - ya) * 0.96), (TX + hw * 1.10, yb + 3.4)]
     for i in range(n, 0, -1):
@@ -228,8 +228,8 @@ for k, (ya, yb, hw) in enumerate(tiers):
     pts[-1] = (TX - hw * 1.10, yb + 3.4)
     pts += [(TX - hw * 0.80, ya + (yb - ya) * 0.96), (TX - hw * 0.50, ya + (yb - ya) * 0.75), (TX - hw * 0.22, ya + (yb - ya) * 0.40)]
     tier_polys.append(Polygon(pts).buffer(0))
-trunk = box(TX - 2.6, 70.0, TX + 2.6, BASE_Y + 1)
-neck = box(TX - 2.0, STAR_C[1], TX + 2.0, 26.0)
+trunk = box(TX - 3.0, 74.0, TX + 3.0, BASE_Y + 1)
+neck = box(TX - 2.2, STAR_C[1], TX + 2.2, 26.0)
 star_board = star(*STAR_C, 7.0, 3.9)
 HOLE_C, HOLE_R = (TX, 3.9), 1.5       # 3 mm hanging hole
 eye_tab = circle(*HOLE_C, 3.3)
@@ -239,7 +239,35 @@ tree = unary_union(tier_polys + [trunk, neck])
 ground = box(1.5, BASE_Y - 1.2, 98.5, 99.6).buffer(1.5, join_style=1).buffer(-1.5, join_style=1)
 ground = box(1.5, BASE_Y - 1.2, 98.5, 99.6).buffer(-1.6, join_style=1).buffer(1.6, join_style=1)
 
-raw = unary_union([bdog, ydog, tree, star_board, eye_tab, ground])
+# ---- small white dog (original scruffy mutt with a tied-on antler), sitting in front of the yellow dog
+WX, WS = float(os.environ.get('WX', 49.5)), 1.0
+def wl(pts):   # local (x right, y down, base at y=22) -> board
+    return [(WX + x * WS, BASE_Y - (22 - y) * WS) for x, y in pts]
+wbody = smooth_poly(wl([(13.6, 3.3), (11.6, 2.9), (9.8, 3.9), (8.8, 3.0), (7.8, 1.5), (7.0, 2.7), (5.8, 3.9), (5.1, 6.0),
+                        (5.3, 8.6), (4.6, 11.2), (3.4, 14.2), (2.5, 17.2), (2.1, 20.2), (2.6, 22.0), (9.0, 22.0), (11.6, 22.0), (11.9, 20.9),
+                        (10.4, 20.3), (9.7, 16.2), (9.6, 12.6), (10.0, 10.6), (9.5, 8.7), (9.8, 7.3), (11.3, 6.4), (13.0, 5.3), (14.1, 4.3)]))
+wtail = stroke(wl([(2.6, 19.6), (1.2, 17.6), (0.6, 15.0), (1.3, 13.4)]), 1.0)
+wantler = unary_union([stroke(wl([(7.2, 2.6), (6.6, -0.8), (6.9, -4.6)]), 0.8), stroke(wl([(6.7, -1.2), (4.6, -3.0)]), 0.7, smooth=False),
+                       stroke(wl([(6.8, -2.8), (8.9, -4.4)]), 0.7, smooth=False), stroke(wl([(4.9, -2.7), (4.6, -4.4)]), 0.6, smooth=False)])
+wdog = unary_union([wbody, wtail, wantler])
+wdark = unary_union([
+    stroke(wl([(6.9, 3.4), (5.9, 5.6), (5.5, 8.4), (6.2, 10.4), (7.2, 9.0), (7.5, 6.2), (7.6, 4.2)]), 0.3),   # long droopy ear
+    circle(*wl([(9.5, 4.9)])[0], 0.42),                                                                    # eye
+    circle(*wl([(13.6, 3.9)])[0], 0.62),                                                                   # nose
+    stroke(wl([(13.0, 5.1), (11.6, 5.8)]), 0.25, smooth=False),                                            # mouth
+    stroke(wl([(5.2, 8.9), (7.4, 9.9), (9.6, 9.0)]), 0.5),                                                 # collar
+    stroke(wl([(6.4, 1.9), (7.9, 2.9)]), 0.3, smooth=False),                                               # string holding the antler
+    stroke(wl([(4.0, 15.0), (6.4, 16.2), (7.2, 19.0), (6.6, 21.2), (8.6, 21.4)]), 0.3),                    # haunch
+    stroke(wl([(8.4, 14.0), (8.5, 21.6)]), 0.28, smooth=False),                                            # front leg
+])
+
+# ---- wrapped present, bottom right: the CR2032 holder sits behind it on the back as the counterweight
+PX0, PX1, PY0 = 71.0, 97.0, 72.0
+BAT_C = ((PX0 + PX1) / 2, 86.0)
+present = unary_union([box(PX0, PY0, PX1, 99.6), box(PX0 - 1.5, PY0 - 3.2, PX1 + 1.5, PY0 + 0.8),
+                       circle(BAT_C[0] - 3.4, PY0 - 5.6, 3.0), circle(BAT_C[0] + 3.4, PY0 - 5.6, 3.0)])
+
+raw = unary_union([bdog, ydog, wdog, tree, star_board, eye_tab, ground, present])
 # make it routable: inside corners get >= 1 mm radius, and slivers thinner than 1.6 mm are removed
 outline = raw.buffer(1.0, join_style=1).buffer(-1.0, join_style=1)
 outline = outline.buffer(-0.8, join_style=1).buffer(0.8, join_style=1)
@@ -249,12 +277,21 @@ hole = circle(*HOLE_C, HOLE_R)
 board = outline.difference(hole)
 safe_cu = board.buffer(-0.5)                 # copper keep-back from the edge
 safe_silk = board.buffer(-0.35)
-print("centroid", outline.centroid.coords[0], "area", round(outline.area))
+# ---- balance: where does it hang?  FR4 1.6 mm ~ 2.96 mg/mm2; CR2032 ~3.0 g + SMD holder ~1.5 g
+M_BOARD = board.area * 0.00296
+M_BAT = float(os.environ.get('MBAT', 4.5))
+cx = (board.centroid.x * M_BOARD + BAT_C[0] * M_BAT) / (M_BOARD + M_BAT)
+cy = (board.centroid.y * M_BOARD + BAT_C[1] * M_BAT) / (M_BOARD + M_BAT)
+tilt = math.degrees(math.atan2(cx - HOLE_C[0], cy - HOLE_C[1]))
+print(f"BALANCE TX={TX} board={M_BOARD:.1f}g bat={M_BAT}g com=({cx:.2f},{cy:.2f}) hole_x={HOLE_C[0]} offset={cx-HOLE_C[0]:+.2f}mm tilt={tilt:+.2f}deg bare_board_x={board.centroid.x:.2f}")
 print("board bounds", [round(v, 2) for v in outline.bounds])
 
 # ---- LEDs: D1..D9 climb the tree, D10 is the heart of the star
-LEDS = [(69.4, 67.2), (82.6, 67.2), (76.0, 61.6), (71.0, 53.0), (81.0, 53.0), (76.0, 47.8),
-        (78.4, 40.6), (73.8, 38.0), (76.0, 29.4), STAR_C]
+LEDS = [(TX + dx, y) for dx, y in [(5.0, 66.0), (8.0, 57.0), (-2.0, 57.0), (3.0, 50.0), (5.5, 44.0), (-3.0, 41.6),
+        (-1.5, 37.5), (2.4, 31.4), (-0.6, 29.0)]] + [STAR_C]
+occl = unary_union([bdog, ydog, wdog, present]).buffer(1.6)
+for x, y in LEDS:
+    if occl.intersects(box(x - 2.4, y - 1.1, x + 2.4, y + 1.1)): print("LED HITS DOG/PRESENT", x, y)
 led_keep = unary_union([box(x - 2.4, y - 1.1, x + 2.4, y + 1.1) for x, y in LEDS])
 for x, y in LEDS:
     if not safe_cu.contains(box(x - 1.5, y - 0.75, x + 1.5, y + 0.75)): print("LED OFF BOARD", x, y)
@@ -268,10 +305,11 @@ for k in range(-140, 140):
     o = (30 + c * dvec[0], 60 + c * dvec[1])
     hatch.append(LineString([(o[0] - px * 90, o[1] - py * 90), (o[0] + px * 90, o[1] + py * 90)]).buffer(0.24, cap_style=2))
 hatch = unary_union(hatch)
+gapw = wdog.buffer(0.7)
 yin = ydog.intersection(safe_cu)
 yshade = yin.difference(affinity.translate(yin, 3.4, -0.8)).intersection(box(0, 0, 100, BASE_Y - 3.0))   # side facing away from the star
 ygold = unary_union([yin.difference(yshade), yshade.intersection(hatch)]).difference(ydark)
-ygold = unary_union([ygold, ytag.difference(circle(*ytag.centroid.coords[0], 0.3))])
+ygold = unary_union([ygold, ytag.difference(circle(*ytag.centroid.coords[0], 0.3))]).difference(gapw)
 
 # ---- BLACK DOG: black mask. White engraved lines, and a thin gold rim where the star light catches it
 gapy = ydog.buffer(0.9)                     # dark halo that separates the dogs
@@ -299,14 +337,14 @@ tree_silk = unary_union(tree_lines)
 # upper tiers sit in front of lower ones: clear the lines of a lower tier where an upper tier covers it
 for i in range(len(tier_polys) - 1, 0, -1):
     pass
-cover = Polygon()
+cover = unary_union([bdog, ydog, wdog, present]).buffer(0.8)
 tl = []
 for p in tier_polys:                         # top tier first
     q = p.intersection(board).buffer(-0.7)
     lines = unary_union([q.difference(q.buffer(-0.3)), q.difference(affinity.translate(q, 0, 1.0))])
     tl.append(lines.difference(cover))
     cover = cover.union(p.buffer(0.5))
-tree_silk = unary_union(tl + [tree_lines[-1]])
+tree_silk = unary_union(tl + [tree_lines[-1].difference(cover)])
 # small gold bauble cap above each tree LED
 bauble_gold = unary_union([unary_union([box(x - 0.7, y - 2.55, x + 0.7, y - 1.85), stroke([(x - 0.35, y - 2.55), (x, y - 3.2), (x + 0.35, y - 2.55)], 0.25, smooth=False)]) for x, y in LEDS[:9]])
 
@@ -323,17 +361,28 @@ shadows = unary_union([
     Polygon([(TX - 3, gtop - 1), (TX + 3, gtop - 1), (TX - 3, gtop + 3), (TX - 9, gtop + 3)]),
 ])
 snow = box(4.0, gtop + 0.3, 96.0, gtop + 0.7)
-text = text_geom("Silent Night", 50.0, 97.4, 3.9)
+snow = box(4.0, gtop + 0.3, PX0 - 3.0, gtop + 0.7)
+text = text_geom("Silent Night", (1.5 + PX0) / 2, 97.4, 3.9)
+# white dog: solid white silk with black engraved details, gold bell on the collar
+wsilk = wdog.intersection(safe_silk).difference(wdark)
+wbell = circle(*wl([(8.6, 10.6)])[0], 0.6)
+# present: gold ribbon + bow, white outline
+pbox = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(safe_cu)
+ribbon = unary_union([box(BAT_C[0] - 1.6, PY0 - 3.2, BAT_C[0] + 1.6, 99.6), box(PX0 - 1.5, PY0 - 2.4, PX1 + 1.5, PY0),
+                      ring(BAT_C[0] - 3.4, PY0 - 5.6, 1.7, 1.3), ring(BAT_C[0] + 3.4, PY0 - 5.6, 1.7, 1.3)]).intersection(safe_cu)
+pin = box(PX0, PY0 + 0.8, PX1, 99.6).intersection(board).buffer(-0.8)
+psilk = pin.difference(pin.buffer(-0.35)).difference(ribbon.buffer(0.3))
+bat_guide = ring(*BAT_C, 10.0, 0.1).union(LineString([(BAT_C[0] - 2, BAT_C[1]), (BAT_C[0] + 2, BAT_C[1])]).buffer(0.05)).union(LineString([(BAT_C[0], BAT_C[1] - 2), (BAT_C[0], BAT_C[1] + 2)]).buffer(0.05))
 
 # ================================================================ assemble
-gold_open = unary_union([ygold, bgold, star_gold, eyelet, bauble_gold]).intersection(safe_cu).difference(led_keep)
+gold_open = unary_union([ygold, bgold.difference(gapw), star_gold, eyelet, bauble_gold, ribbon, wbell]).intersection(safe_cu).difference(led_keep)
 gold_open = gold_open.buffer(-0.07).buffer(0.07)
 copper = gold_open.buffer(0.15).intersection(board.buffer(-0.4)).difference(led_keep.buffer(-0.1))
 # the yellow dog is one solid copper shape (details are mask over copper)
-copper = unary_union([copper, yin.difference(led_keep)])
+copper = unary_union([copper, yin.difference(led_keep).difference(gapw)])
 gold_open = gold_open.intersection(copper.buffer(-0.1))
 
-sil_all = unary_union([bsilk, tree_silk, snow, text])
+sil_all = unary_union([bsilk.difference(gapw), tree_silk, snow, text, wsilk, psilk])
 sil_all = sil_all.difference(copper.buffer(0.25)).difference(led_keep).difference(bauble_gold.buffer(0.4)).intersection(safe_silk)
 sil_all = sil_all.buffer(-0.075).buffer(0.075)
 
@@ -361,12 +410,14 @@ write("01_Edge.Cuts.svg", "Edge.Cuts: board outline = silhouette of two dogs + t
 write("02_F.Cu.svg", "F.Cu: copper under the gold art (ENIG). Filled shapes = copper", fill_paths(copper))
 write("03_F.Mask.svg", "F.Mask: filled shapes = solder mask OPENINGS = exposed ENIG gold", fill_paths(gold_open))
 write("04_F.Silkscreen.svg", "F.Silkscreen: black dog line work, tree edges, snow line and Silent Night text (white legend, clear of the 10 LEDs)", fill_paths(sil_all))
-write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 body outlines). Place D1..D10 on F.Cu at these centres",
-      fill_paths(led_outline.union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
+write("05_User.Drawings_LED_guide.svg", "User.Drawings: 10 LED positions (0805 outlines, F.Cu) and the CR2032 cell position (20 mm circle, holder goes on B.Cu)",
+      fill_paths(bat_guide.union(led_outline).union(unary_union([LineString([(x - 1.6, y), (x + 1.6, y)]).buffer(0.05).union(LineString([(x, y - 1.6), (x, y + 1.6)]).buffer(0.05)) for x, y in LEDS]))))
 with open(os.path.join(OUT, "_leds.txt"), "w") as f:
     f.write("# ref, x_mm, y_mm, rotation_deg (F.Cu, origin = top-left of the 100 x 100 mm box)\n")
     for i, (x, y) in enumerate(LEDS):
         f.write(f"D{i+1}, {x:.2f}, {y:.2f}, 0\n")
+    f.write(f"BT1 (CR2032 holder centre, B.Cu), {BAT_C[0]:.2f}, {BAT_C[1]:.2f}, 0\n")
+    f.write(f"# hanging hole {HOLE_C[0]:.2f}, {HOLE_C[1]:.2f}; centre of mass with battery {cx:.2f}, {cy:.2f}\n")
 
 MASK, GOLD, GOLD_HI, SILK = "#121214", "#d9b14a", "#f0d27a", "#efeee8"
 def colored(g, c):
