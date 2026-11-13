@@ -123,3 +123,17 @@ Checked against JLCPCB's published capabilities (rigid PCB page, board outline g
 ## Files
 - `preview.png` shows the board unlit. `preview_lit.png` shows the star LED (D8) on. `preview_all_lit.png` shows all ten positions lit at once, which the real circuit never does. `preview_pcb_layout.png` shows the placed pads. `preview_stages.png` and `stage_01..10.png` show the 10-stage sequence. `preview_parts_zone.png` overlays the parts zones and USB-C position (blue).
 - `source/build_ornament.py` regenerates every layer and prints the balance (Python 3 with shapely and fonttools). It needs the OFL font Comic Neue Bold saved as `source/fonts/comicneue.ttf` (included).
+
+## DRC-clean board (`drcfix/`)
+
+`drcfix/smt_tree_drcfix.kicad_pcb` is a copy of the hand-edited board that passes KiCad 10.0.7 DRC
+(0 errors, 0 unconnected items; project rules in `smt_tree_drcfix.kicad_pro`). Changes from the hand-edited board:
+
+- J1 (USB-C) pad angles reset to the library orientation, which removed the CC1/CC2/VDD shorts and mask bridges.
+- Art copper clipped to keep 0.5 mm from the board edge and hang hole, and cut-outs widened to at least 0.25 mm around pads and tracks (D9/D10).
+- The 14 gold puppy/ribbon art pieces moved off the /DISCH net to no net.
+- Back-side (B.Cu) GND pour, one via per GND pad on black mask, plus tracks for /CC1, /CC2 and /EYES. D1, D9 and D10 use via-in-pad, so order filled and capped vias.
+- D9-D14, R11 and R12 updated from the KiCad library (D9/D10/R11/R12 pads had been rotated 90 degrees).
+- Remaining: one lib_footprint_mismatch warning on D12, because its library cathode mark was shortened to keep clear of the box outline.
+
+`puppy_face_before_after.png` compares the face art before and after. The DRC output is in `smt_tree_drcfix_drc.rpt`.
