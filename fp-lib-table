@@ -1,0 +1,5 @@
+(fp_lib_table
+	(version 7)
+	(lib (name "airio") (type "KiCad") (uri "D:/projects/airio/hardware/airio-4layer/airio.pretty") (options "") (descr ""))
+	(lib (name "EasyEDA") (type "KiCad") (uri "D:/projects/airio/hardware/airio-4layer/EasyEDA.pretty") (options "") (descr ""))
+)
