@@ -1,0 +1,21 @@
+** Drc report for smt_tree_drcfix.kicad_pcb **
+** Created on 2026-11-13T14:21:05 **
+** Report includes: Errors, Warnings, Exclusions **
+
+** Found 1 DRC violations **
+[lib_footprint_mismatch]: Footprint 'D_0805_2012Metric' does not match copy in library 'Diode_SMD'
+    Local override; warning
+    @(155.9125 mm, 137.5000 mm): Footprint D12
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **
