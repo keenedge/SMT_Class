@@ -1,1 +1,1 @@
-SMT_Class>kikit panelize --framing "frame; width: 3.5mm; space: 2mm" --tabs "annotation; width: 3mm" --cuts "mousebites; drill: 0.5mm; spacing: 0.8mm; offset: 0.2mm" --post "millradius: 1mm" smt_tree.kicad_pcb smt_tree_with_frame.kicad_pcb
+kikit panelize --framing "frame; width: 3.5mm; space: 2mm" --tabs "annotation; width: 3mm" --cuts "mousebites; drill: 0.5mm; spacing: 0.8mm; offset: -0.25mm" --post "millradius: 1mm" smt_tree.kicad_pcb smt_tree_with_frame.kicad_pcb
