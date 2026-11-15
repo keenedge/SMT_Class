@@ -69,7 +69,13 @@
           "thermal_relief_spoke_width": 0.5
         }
       },
-      "diff_pair_dimensions": [],
+      "diff_pair_dimensions": [
+        {
+          "gap": 0.0,
+          "via_gap": 0.0,
+          "width": 0.0
+        }
+      ],
       "drc_exclusions": [],
       "meta": {
         "version": 2
@@ -140,22 +146,22 @@
       },
       "rules": {
         "max_error": 0.005,
-        "min_clearance": 0.0,
+        "min_clearance": 0.15,
         "min_connection": 0.0,
-        "min_copper_edge_clearance": 0.5,
+        "min_copper_edge_clearance": 0.25,
         "min_groove_width": 0.0,
-        "min_hole_clearance": 0.25,
+        "min_hole_clearance": 0.35,
         "min_hole_to_hole": 0.25,
-        "min_microvia_diameter": 0.2,
-        "min_microvia_drill": 0.1,
+        "min_microvia_diameter": 0.0,
+        "min_microvia_drill": 0.0,
         "min_resolved_spokes": 2,
         "min_silk_clearance": 0.0,
-        "min_text_height": 0.8,
-        "min_text_thickness": 0.08,
+        "min_text_height": 1.0,
+        "min_text_thickness": 0.153,
         "min_through_hole_diameter": 0.3,
-        "min_track_width": 0.2,
+        "min_track_width": 0.15,
         "min_via_annular_width": 0.1,
-        "min_via_diameter": 0.5,
+        "min_via_diameter": 0.4,
         "solder_mask_to_copper_clearance": 0.0,
         "use_height_for_length_calcs": true
       },
@@ -206,7 +212,9 @@
           "td_width_to_size_filter_ratio": 0.9
         }
       ],
-      "track_widths": [],
+      "track_widths": [
+        0.0
+      ],
       "tuning_pattern_settings": {
         "diff_pair_defaults": {
           "corner_radius_percentage": 80,
@@ -233,7 +241,12 @@
           "spacing": 0.6
         }
       },
-      "via_dimensions": [],
+      "via_dimensions": [
+        {
+          "diameter": 0.0,
+          "drill": 0.0
+        }
+      ],
       "zones_allow_external_fillets": false
     },
     "ipc2581": {
@@ -267,7 +280,7 @@
     "pinned_symbol_libs": []
   },
   "meta": {
-    "filename": "smt_tree-with-frame.kicad_pro",
+    "filename": "smt_tree_with_frame.kicad_pro",
     "version": 3
   },
   "net_settings": {
@@ -319,115 +332,7 @@
     "netclass_patterns": [
       {
         "netclass": "Board_0-Default",
-        "pattern": "Board_0-unconnected-(U2-Cout-Pad12)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q9"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D9-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q1"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D4-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(U1-OUT)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q2"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D1-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D7-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/EYES"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-unconnected-(U2-Q8-Pad9)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q5"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q0"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/CC2"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-GND"
-      },
-      {
-        "netclass": "Board_0-Default",
         "pattern": "Board_0-Net-(D6-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D3-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D10-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/STAR"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q3"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/VDD"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D8-A)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q7"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/Q4"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-unconnected-(U1-CONT-Pad5)"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/DISCH"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-/CC1"
-      },
-      {
-        "netclass": "Board_0-Default",
-        "pattern": "Board_0-Net-(D2-A)"
       },
       {
         "netclass": "Board_0-Default",
@@ -435,11 +340,119 @@
       },
       {
         "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D7-A)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D9-A)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/EYES"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D10-A)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D3-A)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/CC1"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q0"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q4"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q5"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/DISCH"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q7"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-GND"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D2-A)"
+      },
+      {
+        "netclass": "Board_0-Default",
         "pattern": "Board_0-Net-(D5-A)"
       },
       {
         "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D8-A)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q9"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(U1-OUT)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/CC2"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D1-A)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q3"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/STAR"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-unconnected-(U2-Cout-Pad12)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q2"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(U1-CONT)"
+      },
+      {
+        "netclass": "Board_0-Default",
         "pattern": "Board_0-/Q6"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/Q1"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-/VDD"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-unconnected-(U2-Q8-Pad9)"
+      },
+      {
+        "netclass": "Board_0-Default",
+        "pattern": "Board_0-Net-(D4-A)"
       }
     ]
   },
@@ -447,7 +460,7 @@
     "last_paths": {
       "idf": "",
       "netlist": "",
-      "plot": "",
+      "plot": "gerbers",
       "specctra_dsn": "",
       "step": "",
       "vrml": ""
@@ -460,8 +473,8 @@
     "legacy_lib_list": [],
     "top_level_sheets": [
       {
-        "filename": "smt_tree-with-frame.kicad_sch",
-        "name": "smt_tree-with-frame",
+        "filename": "smt_tree_with_frame.kicad_sch",
+        "name": "smt_tree_with_frame",
         "uuid": "00000000-0000-0000-0000-000000000000"
       }
     ]
